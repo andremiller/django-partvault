@@ -1,0 +1,10 @@
+{% extends "partvault/base.html" %}
+
+{% block content %}
+<p>Items</p>
+<ul>
+    {% for item in item_list %}
+        <li><a href="{% url 'item' item.id %}">{{ item.name }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}

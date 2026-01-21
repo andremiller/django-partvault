@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{% block title %}PartVault{% endblock %}</title>
+</head>
+
+<body>
+    PartVault | <a href="{% url 'items' %}">Items</a> | <a href="{% url 'collections' %}">Collections</a>
+    <hr>
+    {% block content %}{% endblock %}
+
+</body>
+</html>

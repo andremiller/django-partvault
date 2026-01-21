@@ -1,0 +1,11 @@
+{% extends "partvault/base.html" %}
+
+{% block content %}
+<ul>
+<li>ID: {{ collection.id }}</li>
+<li>Name: {{ collection.name }}</li>
+<li>Owner: {{ collection.owner }}</li>
+<li>Asset tag prefix: {{ collection.asset_tag_prefix }}</li>
+<li>Public: {{ collection.is_public }}</li>
+</ul>
+{% endblock %}
