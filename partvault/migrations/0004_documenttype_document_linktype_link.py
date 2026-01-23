@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             name='Document',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.FileField(max_length=255, upload_to=partvault.models.upload_path)),
+                ('file', models.FileField(max_length=255, upload_to=partvault.models.upload_path_document)),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('item', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='partvault.item')),
                 ('document_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='partvault.documenttype')),

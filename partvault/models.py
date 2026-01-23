@@ -1,3 +1,6 @@
+import os
+from datetime import datetime
+
 from django.db import models
 from django.conf import settings
 
@@ -98,13 +101,38 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def asset_tag(self) -> str:
+        # TODO Replace computed asset tag with a tag in the DB
+        return f"{self.collection.asset_tag_prefix}{self.id:05d}"
 
-def upload_path(instance, filename):
-    """ Return upload path, relative to MEDIA_ROOT """
-    # TODO format the path to be in this format: 
-    #   Photos:    {collection.id}-{collection.name}/{assettag}/{datetime}.ext
-    #   Documents: {collection.id}-{collection.name}/{assettag}/{filename}
-    return f"uploads/{filename}"
+
+def upload_path_base(item):
+    """Upload path base, relative to MEDIA_ROOT"""
+    # uploads/{collection.id}-{collection.name}/{assettag}/
+    colshortname = "".join(
+        char for char in item.collection.name.lower() if char.isalpha()
+    )[:8]
+    return f"uploads/{item.collection.id}-{colshortname}/{item.asset_tag}"
+
+
+def upload_path_document(instance, filename):
+    """Document upload path"""
+    filename = "".join(
+        char for char in filename.lower() if char.isalnum() or char in "-."
+    )
+    path_base = upload_path_base(instance.item)
+    return f"{path_base}/{filename}"
+
+
+def upload_path_photo(instance, filename):
+    """Photo upload"""
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    extension = os.path.splitext(filename)[1].lower()
+    filename = f"{timestamp}{extension}"
+    path_base = upload_path_base(instance.item)
+    return f"{path_base}/{filename}"
+
 
 class DocumentType(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
@@ -116,8 +144,10 @@ class DocumentType(models.Model):
 
 class Document(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    document_type = models.ForeignKey(DocumentType, on_delete=models.SET_NULL, null=True, blank=True)
-    file = models.FileField(upload_to=upload_path, max_length=255)
+    document_type = models.ForeignKey(
+        DocumentType, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    file = models.FileField(upload_to=upload_path_document, max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -130,13 +160,15 @@ class LinkType(models.Model):
 
     def __str__(self) -> str:
         return self.name
-    
+
 
 class Link(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    link_type = models.ForeignKey(LinkType, on_delete=models.SET_NULL, null=True, blank=True)
+    link_type = models.ForeignKey(
+        LinkType, on_delete=models.SET_NULL, null=True, blank=True
+    )
     url = models.URLField(max_length=2048)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.link_type or 'Link'}: {self.file.url}"
+        return f"{self.link_type or 'Link'}: {self.url}"
