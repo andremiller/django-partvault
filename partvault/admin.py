@@ -9,9 +9,15 @@ from .models import (
     Link,
     LinkType,
     Manufacturer,
+    Photo,
     Status,
     Tag,
 )
+
+
+class PhotoInline(admin.TabularInline):
+    model = Photo
+    extra = 0
 
 
 class DocumentInline(admin.TabularInline):
@@ -26,7 +32,7 @@ class LinkInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    inlines = [DocumentInline, LinkInline]
+    inlines = [PhotoInline, DocumentInline, LinkInline]
 
 
 admin.site.register(Collection)
@@ -38,3 +44,4 @@ admin.site.register(DocumentType)
 admin.site.register(Document)
 admin.site.register(LinkType)
 admin.site.register(Link)
+admin.site.register(Photo)

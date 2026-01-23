@@ -58,14 +58,6 @@ class Status(models.Model):
         return self.name
 
 
-class LinkType(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    name = models.CharField(max_length=120)
-
-    def __str__(self) -> str:
-        return self.name
-
-
 class Item(models.Model):
     # TODO Add index
     # TODO Add validation to ensure related fields belong to same collection (clean)
@@ -143,6 +135,7 @@ class DocumentType(models.Model):
 
 
 class Document(models.Model):
+    # TODO Delete document from disk if deleted from DB
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     document_type = models.ForeignKey(
         DocumentType, on_delete=models.SET_NULL, null=True, blank=True
@@ -172,3 +165,17 @@ class Link(models.Model):
 
     def __str__(self):
         return f"{self.link_type or 'Link'}: {self.url}"
+
+
+class Photo(models.Model):
+    # TODO Ensure there is only one thumbnail image set
+    # TODO Auto generate lower resolution thumbnails (and delete old if thumbnail changes)
+    # TODO Delete image on disk if deleted from DB
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=upload_path_photo)
+    is_thumbnail = models.BooleanField(default=False, help_text="Photo used as thumbnail")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Photo for {self.item.name}"
+    
