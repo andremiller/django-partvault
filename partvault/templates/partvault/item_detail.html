@@ -2,8 +2,28 @@
 
 {% block content %}
 <ul>
-<li>ID: {{ item.id }}</li>
-<li>Name: {{ item.name }}</li>
-<li>Collection: {{ item.collection }}</li>
+    <li>ID: {{ item.id }}</li>
+    <li>Name: {{ item.name }}</li>
+    <li>Collection: {{ item.collection }}</li>
+    <li>Category: {{ item.category|default:"-" }}</li>
+    <li>Manufacturer: {{ item.manufacturer|default:"-" }}</li>
+    <li>Model: {{ item.model|default:"-" }}</li>
+    <li>Revision: {{ item.revision|default:"-" }}</li>
+    <li>Serial: {{ item.serial|default:"-" }}</li>
+    <li>Status: {{ item.status|default:"-" }}</li>
+    <li>Parent Item: {{ item.parent_item|default:"-" }}</li>
+    <li>Notes: {{ item.notes|default:"-" }}</li>
+    <li>
+        Tags:
+        {% for tag in item.tags.all %}
+            {{ tag }}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            -
+        {% endfor %}
+    </li>
+    <li>Acquired At: {{ item.acquired_at|default:"-" }}</li>
+    <li>Last Tested At: {{ item.last_tested_at|default:"-" }}</li>
+    <li>Created At: {{ item.created_at }}</li>
+    <li>Updated At: {{ item.updated_at }}</li>
 </ul>
 {% endblock %}
