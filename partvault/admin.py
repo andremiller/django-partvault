@@ -1,10 +1,40 @@
 from django.contrib import admin
 
-from .models import Category, Collection, Item, Manufacturer, Status, Tag
+from .models import (
+    Category,
+    Collection,
+    Document,
+    DocumentType,
+    Item,
+    Link,
+    LinkType,
+    Manufacturer,
+    Status,
+    Tag,
+)
+
+
+class DocumentInline(admin.TabularInline):
+    model = Document
+    extra = 0
+
+
+class LinkInline(admin.TabularInline):
+    model = Link
+    extra = 0
+
+
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    inlines = [DocumentInline, LinkInline]
+
 
 admin.site.register(Collection)
 admin.site.register(Category)
-admin.site.register(Item)
 admin.site.register(Manufacturer)
 admin.site.register(Status)
 admin.site.register(Tag)
+admin.site.register(DocumentType)
+admin.site.register(Document)
+admin.site.register(LinkType)
+admin.site.register(Link)

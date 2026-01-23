@@ -55,6 +55,14 @@ class Status(models.Model):
         return self.name
 
 
+class LinkType(models.Model):
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    name = models.CharField(max_length=120)
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Item(models.Model):
     # TODO Add index
     # TODO Add validation to ensure related fields belong to same collection (clean)
@@ -89,3 +97,46 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def upload_path(instance, filename):
+    """ Return upload path, relative to MEDIA_ROOT """
+    # TODO format the path to be in this format: 
+    #   Photos:    {collection.id}-{collection.name}/{assettag}/{datetime}.ext
+    #   Documents: {collection.id}-{collection.name}/{assettag}/{filename}
+    return f"uploads/{filename}"
+
+class DocumentType(models.Model):
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    name = models.CharField(max_length=120)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Document(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    document_type = models.ForeignKey(DocumentType, on_delete=models.SET_NULL, null=True, blank=True)
+    file = models.FileField(upload_to=upload_path, max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.document_type or 'Document'}: {self.file.name}"
+
+
+class LinkType(models.Model):
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    name = models.CharField(max_length=120)
+
+    def __str__(self) -> str:
+        return self.name
+    
+
+class Link(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    link_type = models.ForeignKey(LinkType, on_delete=models.SET_NULL, null=True, blank=True)
+    url = models.URLField(max_length=2048)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.link_type or 'Link'}: {self.file.url}"
