@@ -1,29 +1,76 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-<ul>
-    <li>ID: {{ item.id }}</li>
-    <li>Name: {{ item.name }}</li>
-    <li>Collection: {{ item.collection }}</li>
-    <li>Category: {{ item.category|default:"-" }}</li>
-    <li>Manufacturer: {{ item.manufacturer|default:"-" }}</li>
-    <li>Model: {{ item.model|default:"-" }}</li>
-    <li>Revision: {{ item.revision|default:"-" }}</li>
-    <li>Serial: {{ item.serial|default:"-" }}</li>
-    <li>Status: {{ item.status|default:"-" }}</li>
-    <li>Parent Item: {{ item.parent_item|default:"-" }}</li>
-    <li>Notes: {{ item.notes|default:"-" }}</li>
-    <li>
-        Tags:
-        {% for tag in item.tags.all %}
-            {{ tag }}{% if not forloop.last %}, {% endif %}
-        {% empty %}
-            -
-        {% endfor %}
-    </li>
-    <li>Acquired At: {{ item.acquired_at|default:"-" }}</li>
-    <li>Last Tested At: {{ item.last_tested_at|default:"-" }}</li>
-    <li>Created At: {{ item.created_at }}</li>
-    <li>Updated At: {{ item.updated_at }}</li>
-</ul>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h1 class="h3 mb-1">{{ item.asset_tag }}</h1>
+        <p class="text-muted mb-0">{{ item.name }}</p>
+    </div>
+    <span class="badge bg-info text-dark">{{ item.status|default:"Unknown" }}</span>
+</div>
+<div class="card">
+    <div class="card-header">Item details</div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">ID</span>
+            <span>{{ item.id }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Collection</span>
+            <span>{{ item.collection }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Category</span>
+            <span>{{ item.category|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Manufacturer</span>
+            <span>{{ item.manufacturer|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Model</span>
+            <span>{{ item.model|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Revision</span>
+            <span>{{ item.revision|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Serial</span>
+            <span>{{ item.serial|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Parent item</span>
+            <span>{{ item.parent_item|default:"-" }}</span>
+        </li>
+        <li class="list-group-item">
+            <span class="text-muted d-block mb-2">Tags</span>
+            {% for tag in item.tags.all %}
+                <span class="badge bg-secondary me-1">{{ tag }}</span>
+            {% empty %}
+                <span class="text-muted">-</span>
+            {% endfor %}
+        </li>
+        <li class="list-group-item">
+            <span class="text-muted d-block mb-2">Notes</span>
+            <span>{{ item.notes|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Acquired at</span>
+            <span>{{ item.acquired_at|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Last tested at</span>
+            <span>{{ item.last_tested_at|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Created at</span>
+            <span>{{ item.created_at }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Updated at</span>
+            <span>{{ item.updated_at }}</span>
+        </li>
+    </ul>
+</div>
 {% endblock %}

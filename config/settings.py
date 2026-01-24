@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_bootstrap5',
     'partvault.apps.PartvaultConfig',
     'django.contrib.admin',
     'django.contrib.auth',

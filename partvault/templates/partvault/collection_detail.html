@@ -1,11 +1,36 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-<ul>
-<li>ID: {{ collection.id }}</li>
-<li>Name: {{ collection.name }}</li>
-<li>Owner: {{ collection.owner }}</li>
-<li>Asset tag prefix: {{ collection.asset_tag_prefix }}</li>
-<li>Public: {{ collection.is_public }}</li>
-</ul>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h1 class="h3 mb-1">{{ collection.name }}</h1>
+        <p class="text-muted mb-0">Owned by {{ collection.owner }}</p>
+    </div>
+    {% if collection.is_public %}
+        <span class="badge bg-success">Public</span>
+    {% else %}
+        <span class="badge bg-secondary">Private</span>
+    {% endif %}
+</div>
+<div class="card">
+    <div class="card-header">Collection details</div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">ID</span>
+            <span>{{ collection.id }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Owner</span>
+            <span>{{ collection.owner }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Asset tag prefix</span>
+            <span>{{ collection.asset_tag_prefix }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Visibility</span>
+            <span>{% if collection.is_public %}Public{% else %}Private{% endif %}</span>
+        </li>
+    </ul>
+</div>
 {% endblock %}

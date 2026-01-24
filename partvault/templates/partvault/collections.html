@@ -1,10 +1,21 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-<p>Collections</p>
-<ul>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">Collections</h1>
+    <span class="badge bg-secondary">{{ collection_list|length }}</span>
+</div>
+<div class="list-group">
     {% for collection in collection_list %}
-        <li><a href="{% url 'collection' collection.id %}">{{ collection.name }}</a></li>
+        <a class="list-group-item list-group-item-action" href="{% url 'collection' collection.id %}">
+            <div class="d-flex w-100 justify-content-between">
+                <h2 class="h6 mb-1">{{ collection.name }}</h2>
+                <small class="text-muted">{{ collection.owner }}</small>
+            </div>
+            <p class="mb-0 text-muted">Asset tag prefix: {{ collection.asset_tag_prefix }}</p>
+        </a>
+    {% empty %}
+        <div class="list-group-item text-muted">No collections found.</div>
     {% endfor %}
-</ul>
+</div>
 {% endblock %}

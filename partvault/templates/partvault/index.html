@@ -1,5 +1,30 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-Welcome to PartVault
+<div class="p-4 p-md-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-2">
+        <h1 class="display-6 fw-semibold">Welcome to PartVault</h1>
+        <p class="lead text-muted mb-0">Track parts, inventory details, and collections in one place.</p>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 card-title">Browse items</h2>
+                <p class="card-text text-muted">View all tracked parts, asset tags, and status information.</p>
+                <a class="btn btn-primary" href="{% url 'items' %}">View items</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 card-title">Manage collections</h2>
+                <p class="card-text text-muted">Organize parts by collection and owners.</p>
+                <a class="btn btn-outline-secondary" href="{% url 'collections' %}">View collections</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

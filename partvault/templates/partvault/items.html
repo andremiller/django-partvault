@@ -1,10 +1,21 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-<p>Items</p>
-<ul>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">Items</h1>
+    <span class="badge bg-secondary">{{ item_list|length }}</span>
+</div>
+<div class="list-group">
     {% for item in item_list %}
-        <li><a href="{% url 'item' item.id %}">{{item.asset_tag}} - {{ item.name }}</a></li>
+        <a class="list-group-item list-group-item-action" href="{% url 'item' item.id %}">
+            <div class="d-flex w-100 justify-content-between">
+                <h2 class="h6 mb-1">{{ item.asset_tag }}</h2>
+                <small class="text-muted">{{ item.status|default:"-" }}</small>
+            </div>
+            <p class="mb-0 text-muted">{{ item.name }}</p>
+        </a>
+    {% empty %}
+        <div class="list-group-item text-muted">No items found.</div>
     {% endfor %}
-</ul>
+</div>
 {% endblock %}
