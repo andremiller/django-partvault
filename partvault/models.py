@@ -2,7 +2,8 @@ import os
 from datetime import datetime
 
 from django.db import models
-from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import MinLengthValidator
 
 # TODO Add unique constraints
 # TODO Add collection memberships (via CollectionMembership table, viewer, editor, admin)
@@ -11,13 +12,21 @@ from django.conf import settings
 class Collection(models.Model):
     """A collection of items"""
 
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    owner = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     name = models.CharField(max_length=120)
-    asset_tag_prefix = models.CharField(max_length=2)
+    asset_tag_prefix = models.CharField(max_length=3, validators=[MinLengthValidator(1)])
     is_public = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
+    asset_tag_prefix = models.CharField(max_length=3, unique=True, validators=[MinLengthValidator(1)])
+
+    def __str__(self) -> str:
+        return f"Profile for {self.user}"
 
 
 class Category(models.Model):
@@ -96,7 +105,7 @@ class Item(models.Model):
     @property
     def asset_tag(self) -> str:
         # TODO Replace computed asset tag with a tag in the DB
-        return f"{self.collection.asset_tag_prefix}{self.id:05d}"
+        return f"{self.collection.owner.profile.asset_tag_prefix}{self.collection.asset_tag_prefix}{self.id:05d}"
 
 
 def upload_path_base(item):
@@ -173,9 +182,10 @@ class Photo(models.Model):
     # TODO Delete image on disk if deleted from DB
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     image = models.ImageField(upload_to=upload_path_photo)
-    is_thumbnail = models.BooleanField(default=False, help_text="Photo used as thumbnail")
+    is_thumbnail = models.BooleanField(
+        default=False, help_text="Photo used as thumbnail"
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Photo for {self.item.name}"
-    

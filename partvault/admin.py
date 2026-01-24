@@ -10,6 +10,7 @@ from .models import (
     LinkType,
     Manufacturer,
     Photo,
+    Profile,
     Status,
     Tag,
 )
@@ -45,3 +46,5 @@ admin.site.register(Document)
 admin.site.register(LinkType)
 admin.site.register(Link)
 admin.site.register(Photo)
+admin.site.register(Profile)
+
