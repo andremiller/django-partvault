@@ -1,0 +1,35 @@
+{% extends "partvault/base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-8 col-lg-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h1 class="h4 mb-3">Edit profile</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="details">
+                    {% bootstrap_form user_form %}
+                    {% bootstrap_form profile_form %}
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">Save changes</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'profile' %}">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Change password</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="password">
+                    {% bootstrap_form password_form %}
+                    <button class="btn btn-outline-primary" type="submit">Update password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

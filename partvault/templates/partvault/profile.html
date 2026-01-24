@@ -1,0 +1,54 @@
+{% extends "partvault/base.html" %}
+
+{% block content %}
+{% if user.is_authenticated %}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h3 mb-1">User profile</h1>
+            <p class="text-muted mb-0">Account overview and contact details.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'profile_edit' %}">Edit profile</a>
+            <span class="badge bg-success">Active</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Profile details</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Username</span>
+                <span>{{ user.get_username|default:"-" }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Full name</span>
+                <span>{{ user.get_full_name|default:"-" }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Asset tag prefix</span>
+                <span>{{ profile.asset_tag_prefix|default:"-" }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Email</span>
+                <span>{{ user.email|default:"-" }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Date joined</span>
+                <span>{{ user.date_joined|date:"M d, Y"|default:"-" }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Last login</span>
+                <span>{{ user.last_login|date:"M d, Y"|default:"-" }}</span>
+            </li>
+        </ul>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body">
+            <h1 class="h4">Sign in required</h1>
+            <p class="text-muted mb-3">Log in to view your profile details.</p>
+            <a class="btn btn-primary" href="{% url 'login' %}">Sign in</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
