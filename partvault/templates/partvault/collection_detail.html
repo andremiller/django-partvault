@@ -4,13 +4,18 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
         <h1 class="h3 mb-1">{{ collection.name }}</h1>
-        <p class="text-muted mb-0">Owned by {{ collection.owner }}</p>
+        <p class="text-muted mb-0">Owned by {{ collection.owner_code }}</p>
     </div>
-    {% if collection.is_public %}
-        <span class="badge bg-success">Public</span>
-    {% else %}
-        <span class="badge bg-secondary">Private</span>
-    {% endif %}
+    <div class="d-flex align-items-center gap-2">
+        {% if request.user.is_authenticated and request.user == collection.owner %}
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'collection_edit' collection.id %}">Edit</a>
+        {% endif %}
+        {% if collection.is_public %}
+            <span class="badge bg-success">Public</span>
+        {% else %}
+            <span class="badge bg-secondary">Private</span>
+        {% endif %}
+    </div>
 </div>
 <div class="card">
     <div class="card-header">Collection details</div>
@@ -21,7 +26,7 @@
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Owner</span>
-            <span>{{ collection.owner }}</span>
+            <span>{{ collection.owner_code }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Collection code</span>

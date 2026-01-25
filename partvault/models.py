@@ -28,6 +28,10 @@ class Collection(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def owner_code(self) -> str:
+        return self.owner.profile.user_code
+
 
 class Profile(models.Model):
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)

@@ -2,15 +2,20 @@
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h3 mb-0">Collections</h1>
-    <span class="badge bg-secondary">{{ collection_list|length }}</span>
+    <div class="d-flex align-items-center gap-3">
+        <h1 class="h3 mb-0">Collections</h1>
+        <span class="badge bg-secondary">{{ collection_list|length }}</span>
+    </div>
+    {% if request.user.is_authenticated %}
+        <a class="btn btn-sm btn-primary" href="{% url 'collection_create' %}">New collection</a>
+    {% endif %}
 </div>
 <div class="list-group">
     {% for collection in collection_list %}
         <a class="list-group-item list-group-item-action" href="{% url 'collection' collection.id %}">
             <div class="d-flex w-100 justify-content-between">
                 <h2 class="h6 mb-1">{{ collection.name }}</h2>
-                <small class="text-muted">{{ collection.owner }}</small>
+                <small class="text-muted">{{ collection.owner_code }}</small>
             </div>
             <p class="mb-0 text-muted">Collection code: {{ collection.collection_code }}</p>
         </a>

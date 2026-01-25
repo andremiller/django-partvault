@@ -1,0 +1,39 @@
+{% extends "partvault/base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 mb-3">{% if is_edit %}Edit collection{% else %}New collection{% endif %}</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">
+                            {% if is_edit %}Save changes{% else %}Create collection{% endif %}
+                        </button>
+                        {% if is_edit %}
+                            <a class="btn btn-outline-secondary" href="{% url 'collection' collection.id %}">Cancel</a>
+                        {% else %}
+                            <a class="btn btn-outline-secondary" href="{% url 'collections' %}">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+                {% if is_edit %}
+                    <form
+                        class="mt-3"
+                        method="post"
+                        action="{% url 'collection_delete' collection.id %}"
+                        onsubmit="return confirm('Delete this collection? This cannot be undone.');"
+                    >
+                        {% csrf_token %}
+                        <button class="btn btn-outline-danger" type="submit">Delete collection</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -5,9 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, login
 from django.contrib.auth.forms import PasswordChangeForm
+from django.views.decorators.http import require_POST
 
 from .models import Item, Collection, Profile
-from .forms import ProfileForm, UserProfileForm, SignupForm
+from .forms import CollectionForm, ProfileForm, SignupForm, UserProfileForm
 
 
 def index(request):
@@ -48,6 +49,55 @@ def collection(request, collection_id):
         "partvault/collection_detail.html",
         {"collection": collection},
     )
+
+
+@login_required
+def collection_create(request):
+    if request.method == "POST":
+        form = CollectionForm(request.POST)
+        if form.is_valid():
+            collection = form.save(commit=False)
+            collection.owner = request.user
+            collection.save()
+            messages.success(request, "Collection created.")
+            return redirect("collection", collection_id=collection.id)
+    else:
+        form = CollectionForm()
+    context = {
+        "form": form,
+        "is_edit": False,
+        "cancel_url": "collections",
+    }
+    return render(request, "partvault/collection_form.html", context)
+
+
+@login_required
+def collection_edit(request, collection_id):
+    collection = get_object_or_404(Collection, pk=collection_id, owner=request.user)
+    if request.method == "POST":
+        form = CollectionForm(request.POST, instance=collection)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Collection updated.")
+            return redirect("collection", collection_id=collection.id)
+    else:
+        form = CollectionForm(instance=collection)
+    context = {
+        "form": form,
+        "is_edit": True,
+        "collection": collection,
+        "cancel_url": "collection",
+    }
+    return render(request, "partvault/collection_form.html", context)
+
+
+@login_required
+@require_POST
+def collection_delete(request, collection_id):
+    collection = get_object_or_404(Collection, pk=collection_id, owner=request.user)
+    collection.delete()
+    messages.success(request, "Collection deleted.")
+    return redirect("collections")
 
 
 def profile(request):

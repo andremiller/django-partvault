@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import Profile
+from .models import Collection, Profile
 
 
 class ProfileForm(forms.ModelForm):
@@ -26,6 +26,18 @@ class ProfileForm(forms.ModelForm):
         ):
             raise ValidationError("User code is already in use.")
         return user_code
+
+
+class CollectionForm(forms.ModelForm):
+    class Meta:
+        model = Collection
+        fields = ["name", "collection_code", "is_public"]
+
+    def clean_collection_code(self):
+        collection_code = self.cleaned_data["collection_code"].strip().upper()
+        if not collection_code.isalnum():
+            raise ValidationError("Collection code must be alphanumeric.")
+        return collection_code
 
 
 class UserProfileForm(forms.ModelForm):

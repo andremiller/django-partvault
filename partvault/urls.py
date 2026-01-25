@@ -7,6 +7,17 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("items/", views.items, name="items"),
     path("collections/", views.collections, name="collections"),
+    path("collections/new/", views.collection_create, name="collection_create"),
+    path(
+        "collections/<int:collection_id>/edit/",
+        views.collection_edit,
+        name="collection_edit",
+    ),
+    path(
+        "collections/<int:collection_id>/delete/",
+        views.collection_delete,
+        name="collection_delete",
+    ),
     path("profile/", views.profile, name="profile"),
     path("profile/edit/", views.profile_edit, name="profile_edit"),
     path("signup/", views.signup, name="signup"),
