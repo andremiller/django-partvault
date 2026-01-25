@@ -63,6 +63,70 @@
             <span class="text-muted d-block mb-2">Notes</span>
             <span>{{ item.notes|default:"-" }}</span>
         </li>
+        <li class="list-group-item">
+            <span class="text-muted d-block mb-2">Photos</span>
+            {% with photos=item.photo_set.all %}
+                {% if photos %}
+                    <div class="row g-2">
+                        {% for photo in photos %}
+                            <div class="col-6 col-md-4">
+                                <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                                    <img
+                                        class="img-fluid rounded border"
+                                        src="{{ photo.image.url }}"
+                                        alt="Photo for {{ item.name }}"
+                                    />
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            {% endwith %}
+        </li>
+        <li class="list-group-item">
+            <span class="text-muted d-block mb-2">Documents</span>
+            {% with documents=item.document_set.all %}
+                {% if documents %}
+                    <ul class="list-unstyled mb-0">
+                        {% for document in documents %}
+                            <li>
+                                <span class="text-muted">
+                                    {{ document.document_type|default:"Document" }}:
+                                </span>
+                                <a href="{{ document.file.url }}" target="_blank" rel="noopener">
+                                    {{ document.file.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            {% endwith %}
+        </li>
+        <li class="list-group-item">
+            <span class="text-muted d-block mb-2">Links</span>
+            {% with links=item.link_set.all %}
+                {% if links %}
+                    <ul class="list-unstyled mb-0">
+                        {% for link in links %}
+                            <li>
+                                <span class="text-muted">
+                                    {{ link.link_type|default:"Link" }}:
+                                </span>
+                                <a href="{{ link.url }}" target="_blank" rel="noopener">
+                                    {{ link.url }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            {% endwith %}
+        </li>
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Acquired at</span>
             <span>{{ item.acquired_on|default:"-" }}</span>
