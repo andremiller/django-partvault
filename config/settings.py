@@ -128,3 +128,8 @@ LOGOUT_REDIRECT_URL = "/"
 
 # TODO: Make invitation mode configurable
 INVITATION_CODE = "pv2026"
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
