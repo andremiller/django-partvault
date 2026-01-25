@@ -12,13 +12,27 @@
 </div>
 <div class="list-group">
     {% for collection in collection_list %}
-        <a class="list-group-item list-group-item-action" href="{% url 'collection' collection.id %}">
-            <div class="d-flex w-100 justify-content-between">
-                <h2 class="h6 mb-1">{{ collection.name }}</h2>
-                <small class="text-muted">{{ collection.owner_code }}</small>
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start">
+                <div>
+                    <h2 class="h6 mb-1">
+                        <a class="text-decoration-none" href="{% url 'collection' collection.id %}">{{ collection.name }}</a>
+                    </h2>
+                    <small class="text-muted">{{ collection.owner_code }}</small>
+                </div>
+                {% if request.user.is_authenticated and request.user == collection.owner %}
+                    {% if request.user.profile.active_collection_id == collection.id %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <form method="post" action="{% url 'collection_activate' collection.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Set active</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
             </div>
             <p class="mb-0 text-muted">Collection code: {{ collection.collection_code }}</p>
-        </a>
+        </div>
     {% empty %}
         <div class="list-group-item text-muted">No collections found.</div>
     {% endfor %}

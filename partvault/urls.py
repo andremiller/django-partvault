@@ -6,8 +6,16 @@ from . import views
 urlpatterns = [
     path("", views.index, name="index"),
     path("items/", views.items, name="items"),
+    path("items/new/", views.item_create, name="item_create"),
+    path("items/<int:item_id>/edit/", views.item_edit, name="item_edit"),
+    path("items/<int:item_id>/delete/", views.item_delete, name="item_delete"),
     path("collections/", views.collections, name="collections"),
     path("collections/new/", views.collection_create, name="collection_create"),
+    path(
+        "collections/<int:collection_id>/activate/",
+        views.collection_activate,
+        name="collection_activate",
+    ),
     path(
         "collections/<int:collection_id>/edit/",
         views.collection_edit,

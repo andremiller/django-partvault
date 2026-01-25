@@ -19,7 +19,16 @@
                         <a class="nav-link" href="{% url 'items' %}">Items</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'collections' %}">Collections</a>
+                        <a class="nav-link" href="{% url 'collections' %}">
+                            Collections
+                            {% if user.is_authenticated %}
+                                {% if user.profile.active_collection %}
+                                    [{{ user.profile.active_collection }}]
+                                {% else %}
+                                    [not active]
+                                {% endif %}
+                            {% endif %}
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'profile' %}">Profile</a>

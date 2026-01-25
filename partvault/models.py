@@ -43,6 +43,13 @@ class Profile(models.Model):
             "Required. 1 to 3 alphanumeric characters, unique to you, displayed to others."
         ),
     )
+    active_collection = models.ForeignKey(
+        "Collection",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="active_for_profiles",
+    )
 
     def __str__(self) -> str:
         return f"Profile for {self.user}"
