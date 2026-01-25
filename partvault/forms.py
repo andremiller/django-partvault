@@ -8,26 +8,24 @@ from .models import Profile
 
 
 class ProfileForm(forms.ModelForm):
-    asset_tag_prefix = forms.CharField(max_length=3, help_text="Required.")
-
     class Meta:
         model = Profile
-        fields = ["asset_tag_prefix"]
+        fields = ["user_code"]
         widgets = {
-            "asset_tag_prefix": forms.TextInput(attrs={"maxlength": 3}),
+            "user_code": forms.TextInput(attrs={"maxlength": 3}),
         }
 
-    def clean_asset_tag_prefix(self):
-        asset_tag_prefix = self.cleaned_data["asset_tag_prefix"].strip().upper()
-        if not asset_tag_prefix.isalnum():
-            raise ValidationError("Asset tag prefix must be alphanumeric.")
+    def clean_user_code(self):
+        user_code = self.cleaned_data["user_code"].strip().upper()
+        if not user_code.isalnum():
+            raise ValidationError("User code must be alphanumeric.")
         if (
-            Profile.objects.filter(asset_tag_prefix=asset_tag_prefix)
+            Profile.objects.filter(user_code=user_code)
             .exclude(pk=self.instance.pk)
             .exists()
         ):
-            raise ValidationError("Asset tag prefix is already in use.")
-        return asset_tag_prefix
+            raise ValidationError("User code is already in use.")
+        return user_code
 
 
 class UserProfileForm(forms.ModelForm):
@@ -37,9 +35,9 @@ class UserProfileForm(forms.ModelForm):
 
 
 class SignupForm(UserCreationForm):
-    asset_tag_prefix = forms.CharField(
+    user_code = forms.CharField(
         max_length=3,
-        help_text="Required. 1 to 3 alphanumeric characters that will be used as a user asset tag prefix for all items you create. Items belong to a collection, which also has a prefix, user and collection prefixes will be concatenated.",
+        help_text=Profile._meta.get_field("user_code").help_text,
     )
     invitation_code = forms.CharField(
         max_length=120,
@@ -55,7 +53,7 @@ class SignupForm(UserCreationForm):
                 "first_name",
                 "last_name",
                 "email",
-                "asset_tag_prefix",
+                "user_code",
                 "password1",
                 "password2",
             ]
@@ -68,7 +66,7 @@ class SignupForm(UserCreationForm):
             "first_name",
             "last_name",
             "email",
-            "asset_tag_prefix",
+            "user_code",
             "invitation_code",
             "password1",
             "password2",
@@ -77,18 +75,16 @@ class SignupForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=commit)
         if commit:
-            Profile.objects.create(
-                user=user, asset_tag_prefix=self.cleaned_data["asset_tag_prefix"]
-            )
+            Profile.objects.create(user=user, user_code=self.cleaned_data["user_code"])
         return user
 
-    def clean_asset_tag_prefix(self):
-        asset_tag_prefix = self.cleaned_data["asset_tag_prefix"].strip().upper()
-        if not asset_tag_prefix.isalnum():
-            raise ValidationError("Asset tag prefix must be alphanumeric.")
-        if Profile.objects.filter(asset_tag_prefix=asset_tag_prefix).exists():
-            raise ValidationError("Asset tag prefix is already in use.")
-        return asset_tag_prefix
+    def clean_user_code(self):
+        user_code = self.cleaned_data["user_code"].strip().upper()
+        if not user_code.isalnum():
+            raise ValidationError("User code must be alphanumeric.")
+        if Profile.objects.filter(user_code=user_code).exists():
+            raise ValidationError("User code is already in use.")
+        return user_code
 
     def clean_invitation_code(self):
         invitation_code = self.cleaned_data["invitation_code"].strip()

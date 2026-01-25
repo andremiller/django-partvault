@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    AssetTagSequence,
     Category,
     Collection,
     Document,
@@ -36,6 +37,7 @@ class ItemAdmin(admin.ModelAdmin):
     inlines = [PhotoInline, DocumentInline, LinkInline]
 
 
+admin.site.register(AssetTagSequence)
 admin.site.register(Collection)
 admin.site.register(Category)
 admin.site.register(Manufacturer)

@@ -1,7 +1,9 @@
 import os
 from datetime import datetime
 
-from django.db import models
+from django.db import models, transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 
@@ -14,7 +16,13 @@ class Collection(models.Model):
 
     owner = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     name = models.CharField(max_length=120)
-    asset_tag_prefix = models.CharField(max_length=3, validators=[MinLengthValidator(1)])
+    collection_code = models.CharField(
+        max_length=3,
+        validators=[MinLengthValidator(1)],
+        help_text=(
+            "Required. 1 to 3 alphanumeric characters, code for this collection, for display only."
+        ),
+    )
     is_public = models.BooleanField(default=False)
 
     def __str__(self):
@@ -23,7 +31,14 @@ class Collection(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
-    asset_tag_prefix = models.CharField(max_length=3, unique=True, validators=[MinLengthValidator(1)])
+    user_code = models.CharField(
+        max_length=3,
+        unique=True,
+        validators=[MinLengthValidator(1)],
+        help_text=(
+            "Required. 1 to 3 alphanumeric characters, unique to you, displayed to others."
+        ),
+    )
 
     def __str__(self) -> str:
         return f"Profile for {self.user}"
@@ -85,6 +100,7 @@ class Item(models.Model):
         max_length=120, blank=True
     )  # TODO Replace with m2m identifier table to cater for different identifier types
     status = models.ForeignKey(Status, null=True, blank=True, on_delete=models.SET_NULL)
+    asset_tag = models.CharField(max_length=6, unique=True, null=True, blank=True)
     parent_item = models.ForeignKey(
         "self",
         null=True,
@@ -102,19 +118,18 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
-    @property
-    def asset_tag(self) -> str:
-        # TODO Replace computed asset tag with a tag in the DB
-        return f"{self.collection.owner.profile.asset_tag_prefix}{self.collection.asset_tag_prefix}{self.id:05d}"
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and not self.asset_tag:
+            sequence = AssetTagSequence.assign(self.collection.owner, self)
+            self.asset_tag = sequence.asset_tag
+            super().save(update_fields=["asset_tag"])
 
 
 def upload_path_base(item):
     """Upload path base, relative to MEDIA_ROOT"""
-    # uploads/{collection.id}-{collection.name}/{assettag}/
-    colshortname = "".join(
-        char for char in item.collection.name.lower() if char.isalpha()
-    )[:8]
-    return f"uploads/{item.collection.id}-{colshortname}/{item.asset_tag}"
+    return f"uploads/{item.collection.id}/{item.asset_tag}"
 
 
 def upload_path_document(instance, filename):
@@ -189,3 +204,85 @@ class Photo(models.Model):
 
     def __str__(self):
         return f"Photo for {self.item.name}"
+
+
+class AssetTagSequence(models.Model):
+    class Status(models.TextChoices):
+        RESERVED = "reserved"
+        ASSIGNED = "assigned"
+        VOID = "void"
+
+    asset_tag = models.CharField(
+        max_length=6, unique=True, editable=False, null=True, blank=True
+    )
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.RESERVED
+    )
+    reserved_by = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.SET_NULL
+    )
+    reserved_at = models.DateTimeField(auto_now_add=True)
+    assigned_item = models.OneToOneField(
+        Item, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return str(self.asset_tag or "")
+
+    @staticmethod
+    def _to_base36(value: int) -> str:
+        alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        if value <= 0:
+            return "0"
+        chars = []
+        while value:
+            value, rem = divmod(value, 36)
+            chars.append(alphabet[rem])
+        return "".join(reversed(chars))
+
+    @classmethod
+    def reserve(cls, user):
+        reserved_count = cls.objects.filter(
+            reserved_by=user, status=cls.Status.RESERVED
+        ).count()
+        if reserved_count >= 1000:
+            raise ValueError("User already has 1000 reserved asset tags")
+        return cls.objects.create(reserved_by=user)
+
+    @classmethod
+    def assign(cls, user, item):
+        with transaction.atomic():
+            asset_tag = (
+                cls.objects.select_for_update(skip_locked=True)
+                .filter(
+                    reserved_by=user,
+                    status=cls.Status.RESERVED,
+                    assigned_item__isnull=True,
+                )
+                .order_by("reserved_at")
+                .first()
+            )
+            if asset_tag is None:
+                asset_tag = cls.reserve(user)
+            asset_tag.status = cls.Status.ASSIGNED
+            asset_tag.assigned_item = item
+            asset_tag.assigned_at = datetime.now()
+            asset_tag.save(update_fields=["status", "assigned_item", "assigned_at"])
+            return asset_tag
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and not self.asset_tag:
+            self.asset_tag = self._to_base36(self.id).zfill(6)
+            super().save(update_fields=["asset_tag"])
+
+
+@receiver(post_delete, sender=Item)
+def void_asset_tag_on_item_delete(sender, instance, **kwargs):
+    if not instance.asset_tag:
+        return
+    AssetTagSequence.objects.filter(asset_tag=instance.asset_tag).update(
+        status=AssetTagSequence.Status.VOID
+    )
