@@ -51,10 +51,18 @@ def items(request):
 
 
 def collections(request):
-    collection_list = Collection.objects.all()
-    if not request.user.is_authenticated:
-        collection_list = collection_list.filter(is_public=True)
-    context = {"collection_list": collection_list}
+    if request.user.is_authenticated:
+        my_collections = Collection.objects.filter(owner=request.user)
+        public_collections = Collection.objects.filter(is_public=True).exclude(
+            owner=request.user
+        )
+    else:
+        my_collections = Collection.objects.none()
+        public_collections = Collection.objects.filter(is_public=True)
+    context = {
+        "my_collections": my_collections,
+        "public_collections": public_collections,
+    }
     return render(request, "partvault/collections.html", context)
 
 
