@@ -9,6 +9,10 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <a class="btn btn-sm btn-outline-primary" href="{% url 'profile_edit' %}">Edit profile</a>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Logout</button>
+            </form>
             <span class="badge bg-success">Active</span>
         </div>
     </div>
