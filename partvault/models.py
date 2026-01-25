@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 
 from django.db import models, transaction
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, pre_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
@@ -170,7 +170,6 @@ class DocumentType(models.Model):
 
 
 class Document(models.Model):
-    # TODO Delete document from disk if deleted from DB
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     document_type = models.ForeignKey(
         DocumentType, on_delete=models.SET_NULL, null=True, blank=True
@@ -215,6 +214,42 @@ class Photo(models.Model):
 
     def __str__(self):
         return f"Photo for {self.item.name}"
+
+
+@receiver(post_delete, sender=Document)
+def delete_document_file_on_delete(sender, instance, **kwargs):
+    if instance.file and instance.file.name:
+        instance.file.delete(save=False)
+
+
+@receiver(pre_save, sender=Document)
+def delete_document_file_on_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    try:
+        previous = Document.objects.get(pk=instance.pk)
+    except Document.DoesNotExist:
+        return
+    if previous.file and previous.file.name and previous.file != instance.file:
+        previous.file.delete(save=False)
+
+
+@receiver(post_delete, sender=Photo)
+def delete_photo_file_on_delete(sender, instance, **kwargs):
+    if instance.image and instance.image.name:
+        instance.image.delete(save=False)
+
+
+@receiver(pre_save, sender=Photo)
+def delete_photo_file_on_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    try:
+        previous = Photo.objects.get(pk=instance.pk)
+    except Photo.DoesNotExist:
+        return
+    if previous.image and previous.image.name and previous.image != instance.image:
+        previous.image.delete(save=False)
 
 
 class AssetTagSequence(models.Model):
