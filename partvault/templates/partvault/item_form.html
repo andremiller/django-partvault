@@ -300,9 +300,13 @@
         let activeFile = null;
         let activeObjectUrl = null;
         let activeSelection = null;
+        let activeNaturalWidth = null;
+        let activeNaturalHeight = null;
 
         const cleanupCropper = () => {
             activeSelection = null;
+            activeNaturalWidth = null;
+            activeNaturalHeight = null;
             if (activeObjectUrl) {
                 URL.revokeObjectURL(activeObjectUrl);
                 activeObjectUrl = null;
@@ -404,7 +408,11 @@
             activeSelection = cropperSelection;
             cropperImage
                 .$ready()
-                .then(() => {
+                .then((image) => {
+                    if (image) {
+                        activeNaturalWidth = image.naturalWidth;
+                        activeNaturalHeight = image.naturalHeight;
+                    }
                     const cropperCanvas = container.querySelector("cropper-canvas");
                     if (cropperCanvas && typeof activeSelection.$change === "function") {
                         const canvasRect = cropperCanvas.getBoundingClientRect();
@@ -441,6 +449,25 @@
             activeInput.files = dataTransfer.files;
         };
 
+        const getOutputSize = () => {
+            if (!activeSelection || !activeNaturalWidth || !activeNaturalHeight) {
+                return null;
+            }
+            const selectionRect = activeSelection.getBoundingClientRect();
+            const imageRect = container.querySelector("cropper-image")?.getBoundingClientRect();
+            if (!imageRect || !imageRect.width || !imageRect.height) {
+                return null;
+            }
+            const scaleX = activeNaturalWidth / imageRect.width;
+            const scaleY = activeNaturalHeight / imageRect.height;
+            const width = Math.round(selectionRect.width * scaleX);
+            const height = Math.round(selectionRect.height * scaleY);
+            if (!width || !height) {
+                return null;
+            }
+            return { width, height };
+        };
+
         modalCloseButtons.forEach((button) => {
             button.addEventListener("click", () => {
                 closeModal({ clearInput: true });
@@ -460,7 +487,7 @@
                 ? activeFile.type
                 : "image/png";
             activeSelection
-                .$toCanvas()
+                .$toCanvas(getOutputSize() || undefined)
                 .then((canvas) => {
                     canvas.toBlob((blob) => {
                         if (!blob) {
