@@ -151,7 +151,11 @@
                         {% if is_edit %}
                             <a class="btn btn-outline-secondary" href="{% url 'item' item.id %}">Cancel</a>
                         {% else %}
-                            <a class="btn btn-outline-secondary" href="{% url 'items' %}">Cancel</a>
+                            {% if request.user.profile.active_collection_id %}
+                                <a class="btn btn-outline-secondary" href="{% url 'items' request.user.profile.active_collection_id %}">Cancel</a>
+                            {% else %}
+                                <a class="btn btn-outline-secondary" href="{% url 'collections' %}">Cancel</a>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </form>

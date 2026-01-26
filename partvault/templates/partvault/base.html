@@ -17,21 +17,23 @@
             </button>
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'items' %}">Items</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'collections' %}">
-                            Collections
-                            {% if user.is_authenticated %}
+                    {% if user.is_authenticated and user.profile.active_collection_id %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'items' user.profile.active_collection_id %}">Items</a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'collections' %}">
+                                Collections
                                 {% if user.profile.active_collection %}
                                     [{{ user.profile.active_collection }}]
                                 {% else %}
                                     [not active]
                                 {% endif %}
-                            {% endif %}
-                        </a>
-                    </li>
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
                 <span class="navbar-text ms-lg-3">
                     {% if user.is_authenticated %}

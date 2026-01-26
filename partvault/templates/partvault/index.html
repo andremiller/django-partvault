@@ -1,30 +1,142 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
+<style>
+    .collection-card {
+        position: relative;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .collection-card:hover {
+        background-color: #e9f2ff;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+        transform: translateY(-2px);
+    }
+
+    .collection-card-link {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        text-indent: -9999px;
+    }
+
+    .collection-card-thumb {
+        position: relative;
+        z-index: 1;
+        pointer-events: none;
+    }
+</style>
 <div class="p-4 p-md-5 mb-4 bg-light rounded-3">
     <div class="container-fluid py-2">
         <h1 class="display-6 fw-semibold">Welcome to PartVault</h1>
-        <p class="lead text-muted mb-0">Track parts, inventory details, and collections in one place.</p>
+        <p class="lead text-muted mb-0">This is Part Vault. Yet another inventory management program that lets you keep track of what you have, where it is, what it looks like, and share the mess with others.</p>
     </div>
 </div>
+{% if request.user.is_authenticated %}
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <h2 class="h6 mb-0">My Collections</h2>
+        <span class="badge bg-secondary">{{ my_collections|length }}</span>
+    </div>
+    <div class="row g-3 mb-4">
+        {% for collection in my_collections %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100 collection-card">
+                    <a
+                        class="collection-card-link"
+                        href="{% url 'items' collection.id %}"
+                        aria-label="View {{ collection.name }} collection"
+                    >
+                        View {{ collection.name }} collection
+                    </a>
+                    <div class="card-body">
+                        <div class="d-flex align-items-start justify-content-between gap-2">
+                            <h3 class="h5 fw-semibold mb-1">{{ collection.name }}</h3>
+                            <span class="badge bg-secondary">{{ collection.item_count }} items</span>
+                        </div>
+                        <p class="text-muted mb-2">Owner: {{ collection.owner_code }}</p>
+                            {% if collection.thumbnail_photos %}
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    {% for photo in collection.thumbnail_photos %}
+                                        <div class="d-inline-block collection-card-thumb">
+                                            <img
+                                                src="{{ photo.image.url }}"
+                                                alt="Thumbnail for {{ photo.item.name }}"
+                                                class="rounded border"
+                                                style="width: 56px; height: 56px; object-fit: cover;"
+                                            />
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        <p class="small text-muted mb-0">
+                            Last item update:
+                            {% if collection.last_item_updated_at %}
+                                {{ collection.last_item_updated_at|date:"Y-m-d" }}
+                            {% else %}
+                                No items yet
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-muted">No collections found.</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="d-flex align-items-center gap-2 mb-2">
+    <h2 class="h6 mb-0">Public Collections</h2>
+    <span class="badge bg-secondary">{{ public_collections|length }}</span>
+</div>
 <div class="row g-3">
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="h5 card-title">Browse items</h2>
-                <p class="card-text text-muted">View all tracked parts, asset tags, and status information.</p>
-                <a class="btn btn-primary" href="{% url 'items' %}">View items</a>
+    {% for collection in public_collections %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100 collection-card">
+                <a
+                    class="collection-card-link"
+                    href="{% url 'items' collection.id %}"
+                    aria-label="View {{ collection.name }} collection"
+                >
+                    View {{ collection.name }} collection
+                </a>
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                        <h3 class="h5 fw-semibold mb-1">{{ collection.name }}</h3>
+                        <span class="badge bg-secondary">{{ collection.item_count }} items</span>
+                    </div>
+                    <p class="text-muted mb-2">Owner: {{ collection.owner_code }}</p>
+                    {% if collection.thumbnail_photos %}
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            {% for photo in collection.thumbnail_photos %}
+                                <div class="d-inline-block collection-card-thumb">
+                                    <img
+                                        src="{{ photo.image.url }}"
+                                        alt="Thumbnail for {{ photo.item.name }}"
+                                        class="rounded border"
+                                        style="width: 56px; height: 56px; object-fit: cover;"
+                                    />
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="small text-muted mb-0">
+                        Last item update:
+                        {% if collection.last_item_updated_at %}
+                            {{ collection.last_item_updated_at|date:"Y-m-d" }}
+                        {% else %}
+                            No items yet
+                        {% endif %}
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="h5 card-title">Manage collections</h2>
-                <p class="card-text text-muted">Organize parts by collection and owners.</p>
-                <a class="btn btn-primary" href="{% url 'collections' %}">View collections</a>
-            </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="text-muted">No public collections found.</div>
         </div>
-    </div>
+    {% endfor %}
 </div>
 {% endblock %}

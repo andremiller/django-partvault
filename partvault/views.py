@@ -1,4 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from collections import defaultdict
+
+from django.db.models import Count, Max, Prefetch, Q
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
@@ -38,15 +41,88 @@ from .forms import (
 )
 
 
+def _attach_collection_thumbnails(collections):
+    collection_list = list(collections)
+    if not collection_list:
+        return collection_list
+
+    collection_ids = [collection.id for collection in collection_list]
+    thumbnails = (
+        Photo.objects.filter(
+            is_thumbnail=True,
+            item__collection_id__in=collection_ids,
+        )
+        .select_related("item")
+        .order_by("-uploaded_at")
+    )
+    photos_by_collection = defaultdict(list)
+    for photo in thumbnails:
+        photos = photos_by_collection[photo.item.collection_id]
+        if len(photos) >= 4:
+            continue
+        photos.append(photo)
+
+    for collection in collection_list:
+        collection.thumbnail_photos = photos_by_collection.get(collection.id, [])
+
+    return collection_list
+
+
 def index(request):
-    return render(request, "partvault/index.html")
+    my_collections = Collection.objects.none()
+    if request.user.is_authenticated:
+        my_collections = Collection.objects.filter(owner=request.user).annotate(
+            last_item_updated_at=Max("item__updated_at"),
+            item_count=Count("item", distinct=True),
+        )
+        public_collections = (
+            Collection.objects.filter(is_public=True)
+            .exclude(owner=request.user)
+            .annotate(
+                last_item_updated_at=Max("item__updated_at"),
+                item_count=Count("item", distinct=True),
+            )
+        )
+    else:
+        public_collections = Collection.objects.filter(is_public=True).annotate(
+            last_item_updated_at=Max("item__updated_at"),
+            item_count=Count("item", distinct=True),
+        )
+    my_collections = _attach_collection_thumbnails(my_collections)
+    public_collections = _attach_collection_thumbnails(public_collections)
+    context = {
+        "my_collections": my_collections,
+        "public_collections": public_collections,
+    }
+    return render(request, "partvault/index.html", context)
 
 
-def items(request):
-    item_list = Item.objects.all()
+def items(request, collection_id):
+    collection_queryset = Collection.objects.all()
     if not request.user.is_authenticated:
-        item_list = item_list.filter(collection__is_public=True)
-    context = {"item_list": item_list}
+        collection_queryset = collection_queryset.filter(is_public=True)
+    else:
+        collection_queryset = collection_queryset.filter(
+            Q(is_public=True) | Q(owner=request.user)
+        )
+    collection = get_object_or_404(collection_queryset, pk=collection_id)
+    if request.user.is_authenticated and collection.owner_id == request.user.id:
+        if request.user.profile.active_collection_id != collection.id:
+            request.user.profile.active_collection = collection
+            request.user.profile.save(update_fields=["active_collection"])
+    item_list = (
+        Item.objects.filter(collection=collection)
+        .select_related("category", "manufacturer", "status")
+        .prefetch_related("tags")
+        .prefetch_related(
+            Prefetch(
+                "photo_set",
+                queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+                to_attr="ordered_photos",
+            )
+        )
+    )
+    context = {"item_list": item_list, "collection": collection}
     return render(request, "partvault/items.html", context)
 
 
@@ -300,9 +376,10 @@ def item_edit(request, item_id):
 @require_POST
 def item_delete(request, item_id):
     item = get_object_or_404(Item, pk=item_id, collection__owner=request.user)
+    collection_id = item.collection_id
     item.delete()
     messages.success(request, "Item deleted.")
-    return redirect("items")
+    return redirect("items", collection_id=collection_id)
 
 
 def collection(request, collection_id):

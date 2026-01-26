@@ -1,26 +1,105 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
+<style>
+    .clickable-row {
+        cursor: pointer;
+    }
+
+    .clickable-row:hover {
+        background-color: #e9f2ff;
+    }
+</style>
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-3">
-        <h1 class="h3 mb-0">Items</h1>
+        <h1 class="h3 mb-0">{{ collection.name }} Items</h1>
         <span class="badge bg-secondary">{{ item_list|length }}</span>
     </div>
     {% if request.user.is_authenticated %}
         <a class="btn btn-sm btn-primary" href="{% url 'item_create' %}">New item</a>
     {% endif %}
 </div>
-<div class="list-group">
-    {% for item in item_list %}
-        <a class="list-group-item list-group-item-action" href="{% url 'item' item.id %}">
-            <div class="d-flex w-100 justify-content-between">
-                <h2 class="h6 mb-1">{{ item.asset_tag }}</h2>
-                <small class="text-muted">{{ item.status|default:"-" }}</small>
-            </div>
-            <p class="mb-0 text-muted">{{ item.name }}</p>
-        </a>
-    {% empty %}
-        <div class="list-group-item text-muted">No items found.</div>
-    {% endfor %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th scope="col">Photo</th>
+                <th scope="col">Asset tag</th>
+                <th scope="col">Name</th>
+                <th scope="col">Category</th>
+                <th scope="col">Manufacturer</th>
+                <th scope="col">Model</th>
+                <th scope="col">Tags</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in item_list %}
+                <tr class="clickable-row" data-href="{% url 'item' item.id %}">
+                    <td>
+                        {% with photo=item.ordered_photos.0 %}
+                            {% if photo %}
+                                <a href="{% url 'item' item.id %}" class="d-inline-block">
+                                    <img
+                                        src="{{ photo.image.url }}"
+                                        alt="Thumbnail for {{ item.name }}"
+                                        class="rounded border"
+                                        style="width: 56px; height: 56px; object-fit: cover;"
+                                    />
+                                </a>
+                            {% else %}
+                                <div
+                                    class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
+                                    style="width: 56px; height: 56px;"
+                                >
+                                    —
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <a class="text-decoration-none" href="{% url 'item' item.id %}">
+                            {{ item.asset_tag|default:"-" }}
+                        </a>
+                    </td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.category|default:"-" }}</td>
+                    <td>{{ item.manufacturer|default:"-" }}</td>
+                    <td>{{ item.model|default:"-" }}</td>
+                    <td>
+                        {% for tag in item.tags.all %}
+                            <span class="badge bg-secondary me-1">{{ tag }}</span>
+                        {% empty %}
+                            <span class="text-muted">-</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info text-dark">
+                            {{ item.status|default:"-" }}
+                        </span>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="text-muted">No items found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".clickable-row").forEach((row) => {
+            row.addEventListener("click", (event) => {
+                if (event.target.closest("a")) {
+                    return;
+                }
+                const href = row.getAttribute("data-href");
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}
