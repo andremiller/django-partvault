@@ -170,4 +170,321 @@
         </div>
     </div>
 </div>
+
+<div class="cropper-modal" id="photoCropModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="cropper-modal__backdrop" data-cropper-close></div>
+    <div class="cropper-modal__dialog" role="document">
+        <div class="cropper-modal__header">
+            <h2 class="h5 mb-0">Crop photo</h2>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-cropper-close>Cancel</button>
+        </div>
+        <div class="cropper-modal__body">
+            <p class="text-muted d-none" id="photoCropperLoading">Loading cropper…</p>
+            <p class="text-danger d-none" id="photoCropperError">Cropping failed to start. Please try again.</p>
+            <div class="cropper-container" id="photoCropperContainer"></div>
+        </div>
+        <div class="cropper-modal__footer">
+            <button class="btn btn-primary" type="button" id="photoCropConfirm">Use crop</button>
+            <button class="btn btn-outline-secondary" type="button" data-cropper-close>Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cropper-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cropper-modal.is-open {
+        display: flex;
+    }
+
+    .cropper-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .cropper-modal__dialog {
+        position: relative;
+        background: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        width: min(960px, 92vw);
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .cropper-modal__header,
+    .cropper-modal__footer {
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .cropper-modal__footer {
+        border-bottom: none;
+        border-top: 1px solid #e5e7eb;
+        justify-content: flex-end;
+    }
+
+    .cropper-modal__body {
+        padding: 1rem;
+        overflow: auto;
+        background: #fff;
+    }
+
+    .cropper-container {
+        min-height: 320px;
+    }
+
+    .cropper-container cropper-canvas {
+        height: min(65vh, 520px);
+        width: 100%;
+    }
+
+    body.cropper-modal-open {
+        overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .cropper-modal {
+            align-items: stretch;
+            justify-content: stretch;
+        }
+
+        .cropper-modal__dialog {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            border-radius: 0;
+        }
+
+        .cropper-container cropper-canvas {
+            height: 60vh;
+        }
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@2.1.0/dist/cropper.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("photoCropModal");
+        if (!modal) {
+            return;
+        }
+        const modalCloseButtons = modal.querySelectorAll("[data-cropper-close]");
+        const confirmButton = document.getElementById("photoCropConfirm");
+        const container = document.getElementById("photoCropperContainer");
+        const loadingMessage = document.getElementById("photoCropperLoading");
+        const errorMessage = document.getElementById("photoCropperError");
+        if (!confirmButton || !container || !loadingMessage || !errorMessage) {
+            return;
+        }
+        const fileInputs = document.querySelectorAll(
+            "input[type=\"file\"][name^=\"photo-\"][name$=\"-image\"]"
+        );
+
+        let activeInput = null;
+        let activeFile = null;
+        let activeObjectUrl = null;
+        let activeSelection = null;
+
+        const cleanupCropper = () => {
+            activeSelection = null;
+            if (activeObjectUrl) {
+                URL.revokeObjectURL(activeObjectUrl);
+                activeObjectUrl = null;
+            }
+            container.innerHTML = "";
+            loadingMessage.classList.add("d-none");
+            errorMessage.classList.add("d-none");
+            activeFile = null;
+        };
+
+        const closeModal = ({ clearInput } = { clearInput: false }) => {
+            modal.classList.remove("is-open");
+            modal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("cropper-modal-open");
+            if (clearInput && activeInput) {
+                activeInput.value = "";
+            }
+            cleanupCropper();
+            activeInput = null;
+        };
+
+        const openModal = () => {
+            modal.classList.add("is-open");
+            modal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("cropper-modal-open");
+        };
+
+        const isCropperDefined = () => {
+            return !!window.customElements.get("cropper-canvas");
+        };
+
+        const buildCropperTemplate = () => {
+            if (window.Cropper && window.Cropper.DEFAULT_TEMPLATE) {
+                container.innerHTML = window.Cropper.DEFAULT_TEMPLATE;
+                return;
+            }
+            const canvas = document.createElement("cropper-canvas");
+            canvas.setAttribute("background", "");
+            const image = document.createElement("cropper-image");
+            const shade = document.createElement("cropper-shade");
+            shade.setAttribute("hidden", "");
+            const selectHandle = document.createElement("cropper-handle");
+            selectHandle.setAttribute("action", "select");
+            selectHandle.setAttribute("plain", "");
+            const selection = document.createElement("cropper-selection");
+            selection.setAttribute("initial-coverage", "0.5");
+            selection.setAttribute("movable", "");
+            selection.setAttribute("resizable", "");
+            const grid = document.createElement("cropper-grid");
+            grid.setAttribute("role", "grid");
+            grid.setAttribute("bordered", "");
+            grid.setAttribute("covered", "");
+            const crosshair = document.createElement("cropper-crosshair");
+            crosshair.setAttribute("centered", "");
+            const moveHandle = document.createElement("cropper-handle");
+            moveHandle.setAttribute("action", "move");
+            moveHandle.setAttribute("theme-color", "rgba(255, 255, 255, 0.35)");
+            selection.appendChild(grid);
+            selection.appendChild(crosshair);
+            selection.appendChild(moveHandle);
+            ["n", "e", "s", "w", "ne", "nw", "se", "sw"].forEach((direction) => {
+                const handle = document.createElement("cropper-handle");
+                handle.setAttribute("action", `${direction}-resize`);
+                selection.appendChild(handle);
+            });
+            canvas.appendChild(image);
+            canvas.appendChild(shade);
+            canvas.appendChild(selectHandle);
+            canvas.appendChild(selection);
+            container.appendChild(canvas);
+        };
+
+        const openCropperForFile = (input, file) => {
+            openModal();
+            loadingMessage.classList.remove("d-none");
+            if (!isCropperDefined()) {
+                errorMessage.classList.remove("d-none");
+                loadingMessage.classList.add("d-none");
+                input.value = "";
+                return;
+            }
+            cleanupCropper();
+            activeInput = input;
+            activeFile = file;
+            activeObjectUrl = URL.createObjectURL(file);
+            buildCropperTemplate();
+            const cropperImage = container.querySelector("cropper-image");
+            const cropperSelection = container.querySelector("cropper-selection");
+            if (!cropperImage || !cropperSelection) {
+                errorMessage.classList.remove("d-none");
+                loadingMessage.classList.add("d-none");
+                if (activeInput) {
+                    activeInput.value = "";
+                }
+                return;
+            }
+            cropperImage.setAttribute("src", activeObjectUrl);
+            cropperImage.setAttribute("alt", "Photo to crop");
+            activeSelection = cropperSelection;
+            cropperImage
+                .$ready()
+                .then(() => {
+                    const cropperCanvas = container.querySelector("cropper-canvas");
+                    if (cropperCanvas && typeof activeSelection.$change === "function") {
+                        const canvasRect = cropperCanvas.getBoundingClientRect();
+                        const imageRect = cropperImage.getBoundingClientRect();
+                        activeSelection.$change(
+                            imageRect.left - canvasRect.left,
+                            imageRect.top - canvasRect.top,
+                            imageRect.width,
+                            imageRect.height
+                        );
+                    }
+                    loadingMessage.classList.add("d-none");
+                })
+                .catch(() => {
+                    errorMessage.classList.remove("d-none");
+                    loadingMessage.classList.add("d-none");
+                    if (activeInput) {
+                        activeInput.value = "";
+                    }
+                });
+        };
+
+        const replaceInputWithBlob = (blob) => {
+            if (!activeInput) {
+                return;
+            }
+            const originalName = activeFile ? activeFile.name : "cropped-image.png";
+            const croppedFile = new File([blob], originalName, {
+                type: blob.type || "image/png",
+                lastModified: Date.now(),
+            });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(croppedFile);
+            activeInput.files = dataTransfer.files;
+        };
+
+        modalCloseButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                closeModal({ clearInput: true });
+            });
+        });
+
+        confirmButton.addEventListener("click", () => {
+            if (!activeSelection || !activeFile) {
+                closeModal({ clearInput: true });
+                return;
+            }
+            if (typeof activeSelection.$toCanvas !== "function") {
+                closeModal({ clearInput: true });
+                return;
+            }
+            const outputType = activeFile.type && activeFile.type.startsWith("image/")
+                ? activeFile.type
+                : "image/png";
+            activeSelection
+                .$toCanvas()
+                .then((canvas) => {
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            closeModal({ clearInput: true });
+                            return;
+                        }
+                        replaceInputWithBlob(blob);
+                        closeModal({ clearInput: false });
+                    }, outputType);
+                })
+                .catch(() => {
+                    closeModal({ clearInput: true });
+                });
+        });
+
+        fileInputs.forEach((input) => {
+            input.addEventListener("change", (event) => {
+                const file = event.target.files && event.target.files[0];
+                if (!file) {
+                    return;
+                }
+                openCropperForFile(input, file);
+            });
+        });
+    });
+</script>
 {% endblock %}
