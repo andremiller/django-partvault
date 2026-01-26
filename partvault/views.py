@@ -74,6 +74,15 @@ def item(request, item_id):
     return render(request, "partvault/item_detail.html", {"item": item})
 
 
+def item_by_asset_tag(request, asset_tag):
+    item_queryset = Item.objects.all()
+    if not request.user.is_authenticated:
+        item_queryset = item_queryset.filter(collection__is_public=True)
+    normalized_tag = asset_tag.strip().upper()
+    item = get_object_or_404(item_queryset, asset_tag=normalized_tag)
+    return redirect("item", item_id=item.id)
+
+
 def _build_item_formsets(post_data=None):
     CategoryFormSet = formset_factory(CategoryForm, extra=1)
     ManufacturerFormSet = formset_factory(ManufacturerForm, extra=1)
