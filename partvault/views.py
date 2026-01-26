@@ -221,7 +221,11 @@ def item_create(request):
     else:
         active_collection = request.user.profile.active_collection
         initial = {"collection": active_collection} if active_collection else None
-        form = ItemForm(user=request.user, initial=initial)
+        form = ItemForm(
+            user=request.user,
+            initial=initial,
+            collection=active_collection,
+        )
     context = {
         "form": form,
         "is_edit": False,
