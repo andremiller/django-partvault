@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from django.forms import formset_factory, inlineformset_factory
 
 from .models import (
+    AssetTagSequence,
     Category,
     Collection,
     Document,
@@ -66,6 +67,25 @@ def _attach_collection_thumbnails(collections):
         collection.thumbnail_photos = photos_by_collection.get(collection.id, [])
 
     return collection_list
+
+
+def _base36_to_int(value: str) -> int:
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    total = 0
+    for char in value.upper():
+        total = total * 36 + alphabet.index(char)
+    return total
+
+
+def _int_to_base36(value: int) -> str:
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if value <= 0:
+        return "0"
+    chars = []
+    while value:
+        value, rem = divmod(value, 36)
+        chars.append(alphabet[rem])
+    return "".join(reversed(chars))
 
 
 def index(request):
@@ -457,12 +477,78 @@ def collection_activate(request, collection_id):
 
 def profile(request):
     profile = None
+    reserved_asset_tag_labels = []
     if request.user.is_authenticated:
         try:
             profile = request.user.profile
         except ObjectDoesNotExist:
             profile = None
-    return render(request, "partvault/profile.html", {"profile": profile})
+        reserved_asset_tags = list(
+            AssetTagSequence.objects.filter(
+                reserved_by=request.user,
+                status=AssetTagSequence.Status.RESERVED,
+            ).values_list("asset_tag", flat=True)
+        )
+        normalized_tags = [
+            asset_tag.strip().upper() for asset_tag in reserved_asset_tags if asset_tag
+        ]
+        sorted_values = sorted(_base36_to_int(tag) for tag in normalized_tags)
+        if sorted_values:
+            start = sorted_values[0]
+            end = sorted_values[0]
+            ranges = []
+            for value in sorted_values[1:]:
+                if value == end + 1:
+                    end = value
+                    continue
+                ranges.append((start, end))
+                start = value
+                end = value
+            ranges.append((start, end))
+
+            for range_start, range_end in ranges:
+                start_tag = _int_to_base36(range_start).zfill(6)
+                end_tag = _int_to_base36(range_end).zfill(6)
+                count = range_end - range_start + 1
+                if range_start == range_end:
+                    label = start_tag
+                else:
+                    label = f"{start_tag} - {end_tag}"
+                reserved_asset_tag_labels.append({"label": label, "count": count})
+    return render(
+        request,
+        "partvault/profile.html",
+        {
+            "profile": profile,
+            "reserved_asset_tags": reserved_asset_tag_labels,
+        },
+    )
+
+
+@login_required
+@require_POST
+def reserve_asset_tags(request):
+    reserved_count = 0
+    for _ in range(250):
+        try:
+            AssetTagSequence.reserve(request.user)
+            reserved_count += 1
+        except ValueError:
+            break
+
+    if reserved_count == 250:
+        messages.success(request, "Reserved 250 asset tags.")
+    elif reserved_count:
+        messages.warning(
+            request,
+            (
+                f"Reserved {reserved_count} asset tags. "
+                "You have reached the 1000 reserved limit."
+            ),
+        )
+    else:
+        messages.warning(request, "You already have 1000 reserved asset tags.")
+    return redirect("profile")
 
 
 @login_required
