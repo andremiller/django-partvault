@@ -10,6 +10,7 @@ from .models import (
     Document,
     Item,
     Link,
+    Location,
     Manufacturer,
     Photo,
     Profile,
@@ -58,6 +59,7 @@ class ItemForm(forms.ModelForm):
             "collection",
             "name",
             "category",
+            "location",
             "manufacturer",
             "model",
             "revision",
@@ -103,6 +105,7 @@ class ItemForm(forms.ModelForm):
     def _limit_related_querysets(self, collection):
         if collection is None:
             self.fields["category"].queryset = Category.objects.none()
+            self.fields["location"].queryset = Location.objects.none()
             self.fields["manufacturer"].queryset = Manufacturer.objects.none()
             self.fields["status"].queryset = Status.objects.none()
             self.fields["parent_item"].queryset = Item.objects.none()
@@ -110,6 +113,9 @@ class ItemForm(forms.ModelForm):
             return
 
         self.fields["category"].queryset = Category.objects.filter(
+            collection=collection
+        )
+        self.fields["location"].queryset = Location.objects.filter(
             collection=collection
         )
         self.fields["manufacturer"].queryset = Manufacturer.objects.filter(
@@ -127,6 +133,7 @@ class ItemForm(forms.ModelForm):
         collection = cleaned_data.get("collection")
         related_fields = [
             "category",
+            "location",
             "manufacturer",
             "status",
             "parent_item",
@@ -161,6 +168,15 @@ class UserProfileForm(forms.ModelForm):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
+        fields = ["name"]
+
+    def clean_name(self):
+        return self.cleaned_data["name"].strip()
+
+
+class LocationForm(forms.ModelForm):
+    class Meta:
+        model = Location
         fields = ["name"]
 
     def clean_name(self):

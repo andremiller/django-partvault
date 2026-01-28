@@ -20,6 +20,7 @@ from .models import (
     Item,
     Link,
     LinkType,
+    Location,
     Manufacturer,
     Photo,
     Profile,
@@ -32,6 +33,7 @@ from .forms import (
     DocumentForm,
     ItemForm,
     LinkForm,
+    LocationForm,
     ManufacturerForm,
     PhotoForm,
     ProfileForm,
@@ -132,7 +134,7 @@ def items(request, collection_id):
             request.user.profile.save(update_fields=["active_collection"])
     item_list = (
         Item.objects.filter(collection=collection)
-        .select_related("category", "manufacturer", "status")
+        .select_related("category", "location", "manufacturer", "status")
         .prefetch_related("tags")
         .prefetch_related(
             Prefetch(
@@ -181,11 +183,13 @@ def item_by_asset_tag(request, asset_tag):
 
 def _build_item_formsets(post_data=None):
     CategoryFormSet = formset_factory(CategoryForm, extra=1)
+    LocationFormSet = formset_factory(LocationForm, extra=1)
     ManufacturerFormSet = formset_factory(ManufacturerForm, extra=1)
     StatusFormSet = formset_factory(StatusForm, extra=1)
     TagFormSet = formset_factory(TagForm, extra=2)
     return {
         "category_formset": CategoryFormSet(post_data, prefix="category"),
+        "location_formset": LocationFormSet(post_data, prefix="location"),
         "manufacturer_formset": ManufacturerFormSet(post_data, prefix="manufacturer"),
         "status_formset": StatusFormSet(post_data, prefix="status"),
         "tag_formset": TagFormSet(post_data, prefix="tag"),
@@ -294,6 +298,9 @@ def item_create(request):
                 new_categories = _save_inline_objects(
                     formsets["category_formset"], Category, collection
                 )
+                new_locations = _save_inline_objects(
+                    formsets["location_formset"], Location, collection
+                )
                 new_manufacturers = _save_inline_objects(
                     formsets["manufacturer_formset"], Manufacturer, collection
                 )
@@ -305,13 +312,17 @@ def item_create(request):
                 )
                 if not item.category and new_categories:
                     item.category = new_categories[0]
+                if not item.location and new_locations:
+                    item.location = new_locations[0]
                 if not item.manufacturer and new_manufacturers:
                     item.manufacturer = new_manufacturers[0]
                 if not item.status and new_statuses:
                     item.status = new_statuses[0]
                 if new_tags:
                     item.tags.add(*new_tags)
-                item.save(update_fields=["category", "manufacturer", "status"])
+                item.save(
+                    update_fields=["category", "location", "manufacturer", "status"]
+                )
                 messages.success(request, "Item created.")
                 return redirect("item", item_id=item.id)
     else:
@@ -360,6 +371,9 @@ def item_edit(request, item_id):
                 new_categories = _save_inline_objects(
                     formsets["category_formset"], Category, collection
                 )
+                new_locations = _save_inline_objects(
+                    formsets["location_formset"], Location, collection
+                )
                 new_manufacturers = _save_inline_objects(
                     formsets["manufacturer_formset"], Manufacturer, collection
                 )
@@ -371,13 +385,17 @@ def item_edit(request, item_id):
                 )
                 if not item.category and new_categories:
                     item.category = new_categories[0]
+                if not item.location and new_locations:
+                    item.location = new_locations[0]
                 if not item.manufacturer and new_manufacturers:
                     item.manufacturer = new_manufacturers[0]
                 if not item.status and new_statuses:
                     item.status = new_statuses[0]
                 if new_tags:
                     item.tags.add(*new_tags)
-                item.save(update_fields=["category", "manufacturer", "status"])
+                item.save(
+                    update_fields=["category", "location", "manufacturer", "status"]
+                )
                 messages.success(request, "Item updated.")
                 return redirect("item", item_id=item.id)
     else:

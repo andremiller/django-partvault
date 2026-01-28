@@ -66,6 +66,17 @@ class Category(models.Model):
         return self.name
 
 
+class Location(models.Model):
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    name = models.CharField(max_length=120)
+
+    class Meta:
+        verbose_name_plural = "locations"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Tag(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     name = models.CharField(max_length=60)
@@ -101,6 +112,9 @@ class Item(models.Model):
     name = models.CharField(max_length=200)
     category = models.ForeignKey(
         Category, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    location = models.ForeignKey(
+        Location, null=True, blank=True, on_delete=models.SET_NULL
     )
     manufacturer = models.ForeignKey(
         Manufacturer, null=True, blank=True, on_delete=models.SET_NULL

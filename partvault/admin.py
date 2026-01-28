@@ -9,6 +9,7 @@ from .models import (
     Item,
     Link,
     LinkType,
+    Location,
     Manufacturer,
     Photo,
     Profile,
@@ -40,6 +41,7 @@ class ItemAdmin(admin.ModelAdmin):
 admin.site.register(AssetTagSequence)
 admin.site.register(Collection)
 admin.site.register(Category)
+admin.site.register(Location)
 admin.site.register(Manufacturer)
 admin.site.register(Status)
 admin.site.register(Tag)
@@ -49,4 +51,3 @@ admin.site.register(LinkType)
 admin.site.register(Link)
 admin.site.register(Photo)
 admin.site.register(Profile)
-

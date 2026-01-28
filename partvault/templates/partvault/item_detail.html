@@ -3,8 +3,8 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
-        <h1 class="h3 mb-1">{{ item.asset_tag }}</h1>
-        <p class="text-muted mb-0">{{ item.name }}</p>
+        <h1 class="h3 mb-1">{{ item.name }}</h1>
+        <p class="text-muted mb-0">{{ item.asset_tag }}</p>
     </div>
     <div class="d-flex align-items-center gap-2">
         {% if request.user.is_authenticated %}
@@ -19,10 +19,6 @@
 <div class="card">
     <div class="card-header">Item details</div>
     <ul class="list-group list-group-flush">
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">ID</span>
-            <span>{{ item.id }}</span>
-        </li>
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Collection</span>
             <a class="text-decoration-none" href="{% url 'items' item.collection.id %}">
@@ -48,6 +44,10 @@
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Serial</span>
             <span>{{ item.serial|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Location</span>
+            <span>{{ item.location|default:"-" }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Parent item</span>
