@@ -109,7 +109,7 @@ class Item(models.Model):
     # TODO Add validation to ensure related fields belong to same collection (clean)
 
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, blank=True)
     category = models.ForeignKey(
         Category, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -144,6 +144,14 @@ class Item(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        if not (self.name or "").strip():
+            name_parts = []
+            if self.manufacturer:
+                name_parts.append(self.manufacturer.name)
+            model_name = (self.model or "").strip()
+            if model_name:
+                name_parts.append(model_name)
+            self.name = " ".join(name_parts)
         is_new = self.pk is None
         super().save(*args, **kwargs)
         if is_new and not self.asset_tag:

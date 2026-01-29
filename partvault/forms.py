@@ -128,6 +128,9 @@ class ItemForm(forms.ModelForm):
         self.fields["parent_item"].queryset = parent_queryset
         self.fields["tags"].queryset = Tag.objects.filter(collection=collection)
 
+    def clean_name(self):
+        return (self.cleaned_data.get("name") or "").strip()
+
     def clean(self):
         cleaned_data = super().clean()
         collection = cleaned_data.get("collection")

@@ -213,7 +213,7 @@ def _build_related_formsets(item=None, post_data=None, files=None):
     if item is None:
         item = Item()
     PhotoFormSet = inlineformset_factory(
-        Item, Photo, form=PhotoForm, extra=2, can_delete=True
+        Item, Photo, form=PhotoForm, extra=3, can_delete=True
     )
     DocumentFormSet = inlineformset_factory(
         Item, Document, form=DocumentForm, extra=2, can_delete=True
