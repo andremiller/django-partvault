@@ -185,10 +185,16 @@ def item(request, item_id):
         "parent_item__category",
         "status",
     ).prefetch_related(
+        "tags",
         Prefetch(
             "contained_items",
             queryset=child_queryset,
             to_attr="ordered_children",
+        ),
+        Prefetch(
+            "photo_set",
+            queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+            to_attr="ordered_photos",
         ),
         Prefetch(
             "parent_item__photo_set",
@@ -199,7 +205,30 @@ def item(request, item_id):
     if not request.user.is_authenticated:
         item_queryset = item_queryset.filter(collection__is_public=True)
     item = get_object_or_404(item_queryset, pk=item_id)
-    return render(request, "partvault/item_detail.html", {"item": item})
+    description_parts = []
+    if item.category:
+        description_parts.append(str(item.category))
+    if item.manufacturer:
+        description_parts.append(str(item.manufacturer))
+    model_name = (item.model or "").strip()
+    if model_name:
+        description_parts.append(model_name)
+    tags = [str(tag) for tag in item.tags.all()]
+    if tags:
+        description_parts.append(", ".join(tags))
+    description = " · ".join(description_parts)
+    og_image_url = None
+    photo = item.ordered_photos[0] if item.ordered_photos else None
+    if photo and photo.image:
+        og_image_url = request.build_absolute_uri(photo.image.url)
+    context = {
+        "item": item,
+        "og_title": item.name or "Item",
+        "og_description": description,
+        "og_url": request.build_absolute_uri(),
+        "og_image_url": og_image_url,
+    }
+    return render(request, "partvault/item_detail.html", context)
 
 
 def item_by_asset_tag(request, asset_tag):
