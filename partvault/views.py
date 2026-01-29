@@ -165,7 +165,37 @@ def collections(request):
 
 
 def item(request, item_id):
-    item_queryset = Item.objects.all()
+    child_queryset = (
+        Item.objects.select_related("category")
+        .prefetch_related(
+            Prefetch(
+                "photo_set",
+                queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+                to_attr="ordered_photos",
+            )
+        )
+        .order_by("name")
+    )
+    item_queryset = Item.objects.select_related(
+        "category",
+        "collection",
+        "location",
+        "manufacturer",
+        "parent_item",
+        "parent_item__category",
+        "status",
+    ).prefetch_related(
+        Prefetch(
+            "contained_items",
+            queryset=child_queryset,
+            to_attr="ordered_children",
+        ),
+        Prefetch(
+            "parent_item__photo_set",
+            queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+            to_attr="ordered_photos",
+        ),
+    )
     if not request.user.is_authenticated:
         item_queryset = item_queryset.filter(collection__is_public=True)
     item = get_object_or_404(item_queryset, pk=item_id)

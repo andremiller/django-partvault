@@ -53,10 +53,72 @@
             <span class="text-muted">Location</span>
             <span>{{ item.location|default:"-" }}</span>
         </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Parent item</span>
-            <span>{{ item.parent_item|default:"-" }}</span>
-        </li>
+        {% if item.parent_item %}
+            <li class="list-group-item">
+                <span class="text-muted d-block mb-2">Parent item</span>
+                <a class="text-decoration-none" href="{% url 'item' item.parent_item.id %}">
+                    <div class="d-flex align-items-center gap-3">
+                        {% with photo=item.parent_item.ordered_photos.0 %}
+                            {% if photo %}
+                                <img
+                                    src="{{ photo.image.url }}"
+                                    alt="Thumbnail for {{ item.parent_item.name }}"
+                                    class="rounded border"
+                                    style="width: 56px; height: 56px; object-fit: cover;"
+                                />
+                            {% else %}
+                                <div
+                                    class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
+                                    style="width: 56px; height: 56px;"
+                                >
+                                    —
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        <div>
+                            <div class="fw-semibold text-dark">{{ item.parent_item.name }}</div>
+                            <div class="text-muted">{{ item.parent_item.category|default:"-" }}</div>
+                        </div>
+                    </div>
+                </a>
+            </li>
+        {% endif %}
+        {% with children=item.ordered_children %}
+            {% if children %}
+                <li class="list-group-item">
+                    <span class="text-muted d-block mb-2">Child items</span>
+                    <div class="d-flex flex-column gap-2">
+                        {% for child in children %}
+                            <a class="text-decoration-none" href="{% url 'item' child.id %}">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% with photo=child.ordered_photos.0 %}
+                                        {% if photo %}
+                                            <img
+                                                src="{{ photo.image.url }}"
+                                                alt="Thumbnail for {{ child.name }}"
+                                                class="rounded border"
+                                                style="width: 56px; height: 56px; object-fit: cover;"
+                                            />
+                                        {% else %}
+                                            <div
+                                                class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
+                                                style="width: 56px; height: 56px;"
+                                            >
+                                                —
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                    <div>
+                                        <div class="fw-semibold text-dark">{{ child.name }}</div>
+                                        <div class="text-muted">{{ child.category|default:"-" }}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </li>
+            {% endif %}
+        {% endwith %}
         <li class="list-group-item">
             <span class="text-muted d-block mb-2">Tags</span>
             {% for tag in item.tags.all %}
