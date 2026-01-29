@@ -46,6 +46,10 @@
             <span>{{ item.serial|default:"-" }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Release date</span>
+            <span>{{ item.release_date|date:"Y-m"|default:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Location</span>
             <span>{{ item.location|default:"-" }}</span>
         </li>
