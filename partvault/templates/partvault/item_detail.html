@@ -47,34 +47,56 @@
                 {{ item.collection }}
             </a>
         </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Category</span>
-            <span>{{ item.category|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Manufacturer</span>
-            <span>{{ item.manufacturer|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Model</span>
-            <span>{{ item.model|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Revision</span>
-            <span>{{ item.revision|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Serial</span>
-            <span>{{ item.serial|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Release date</span>
-            <span>{{ item.release_date|date:"Y-m"|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Location</span>
-            <span>{{ item.location|default:"-" }}</span>
-        </li>
+        {% if item.category %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Category</span>
+                <span>{{ item.category }}</span>
+            </li>
+        {% endif %}
+        {% if item.manufacturer %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Manufacturer</span>
+                <span>{{ item.manufacturer }}</span>
+            </li>
+        {% endif %}
+        {% if item.model %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Model</span>
+                <span>{{ item.model }}</span>
+            </li>
+        {% endif %}
+        {% if item.tags.exists %}
+            <li class="list-group-item">
+                <span class="text-muted d-block mb-2">Tags</span>
+                {% for tag in item.tags.all %}
+                    <span class="badge bg-secondary me-1">{{ tag }}</span>
+                {% endfor %}
+            </li>
+        {% endif %}
+        {% if item.revision %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Revision</span>
+                <span>{{ item.revision }}</span>
+            </li>
+        {% endif %}
+        {% if item.serial %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Serial</span>
+                <span>{{ item.serial }}</span>
+            </li>
+        {% endif %}
+        {% if item.release_date %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Release date</span>
+                <span>{{ item.release_date|date:"Y-m" }}</span>
+            </li>
+        {% endif %}
+        {% if item.location %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Location</span>
+                <span>{{ item.location }}</span>
+            </li>
+        {% endif %}
         {% if item.parent_item %}
             <li class="list-group-item">
                 <span class="text-muted d-block mb-2">Parent item</span>
@@ -105,58 +127,10 @@
                 </a>
             </li>
         {% endif %}
-        {% with children=item.ordered_children %}
-            {% if children %}
+        {% with photos=item.photo_set.all %}
+            {% if photos %}
                 <li class="list-group-item">
-                    <span class="text-muted d-block mb-2">Child items</span>
-                    <div class="d-flex flex-column gap-2">
-                        {% for child in children %}
-                            <a class="text-decoration-none" href="{% url 'item' child.id %}">
-                                <div class="d-flex align-items-center gap-3">
-                                    {% with photo=child.ordered_photos.0 %}
-                                        {% if photo %}
-                                            <img
-                                                src="{{ photo.image.url }}"
-                                                alt="Thumbnail for {{ child.name }}"
-                                                class="rounded border"
-                                                style="width: 56px; height: 56px; object-fit: cover;"
-                                            />
-                                        {% else %}
-                                            <div
-                                                class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
-                                                style="width: 56px; height: 56px;"
-                                            >
-                                                —
-                                            </div>
-                                        {% endif %}
-                                    {% endwith %}
-                                    <div>
-                                        <div class="fw-semibold text-dark">{{ child.name }}</div>
-                                        <div class="text-muted">{{ child.category|default:"-" }}</div>
-                                    </div>
-                                </div>
-                            </a>
-                        {% endfor %}
-                    </div>
-                </li>
-            {% endif %}
-        {% endwith %}
-        <li class="list-group-item">
-            <span class="text-muted d-block mb-2">Tags</span>
-            {% for tag in item.tags.all %}
-                <span class="badge bg-secondary me-1">{{ tag }}</span>
-            {% empty %}
-                <span class="text-muted">-</span>
-            {% endfor %}
-        </li>
-        <li class="list-group-item">
-            <span class="text-muted d-block mb-2">Notes</span>
-            <span>{{ item.notes|default:"-" }}</span>
-        </li>
-        <li class="list-group-item">
-            <span class="text-muted d-block mb-2">Photos</span>
-            {% with photos=item.photo_set.all %}
-                {% if photos %}
+                    <span class="text-muted d-block mb-2">Photos</span>
                     <div class="row g-2">
                         {% for photo in photos %}
                             <div class="col-6 col-md-4">
@@ -170,15 +144,90 @@
                             </div>
                         {% endfor %}
                     </div>
-                {% else %}
-                    <span class="text-muted">-</span>
-                {% endif %}
-            {% endwith %}
-        </li>
-        <li class="list-group-item">
-            <span class="text-muted d-block mb-2">Documents</span>
-            {% with documents=item.document_set.all %}
-                {% if documents %}
+                </li>
+            {% endif %}
+        {% endwith %}
+        {% with children=item.ordered_children %}
+            {% if children %}
+                <li class="list-group-item">
+                    <span class="text-muted d-block mb-2">Child items</span>
+                    <div class="d-flex flex-column gap-2">
+                        {% for child in children %}
+                            <div class="d-flex flex-column gap-2">
+                                <a class="text-decoration-none" href="{% url 'item' child.id %}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% with photo=child.ordered_photos.0 %}
+                                            {% if photo %}
+                                                <img
+                                                    src="{{ photo.image.url }}"
+                                                    alt="Thumbnail for {{ child.name }}"
+                                                    class="rounded border"
+                                                    style="width: 56px; height: 56px; object-fit: cover;"
+                                                />
+                                            {% else %}
+                                                <div
+                                                    class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
+                                                    style="width: 56px; height: 56px;"
+                                                >
+                                                    —
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ child.name }}</div>
+                                            <div class="text-muted">{{ child.category|default:"-" }}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% with grandchildren=child.ordered_children %}
+                                    {% if grandchildren %}
+                                        <div class="d-flex flex-column gap-2 ms-4">
+                                            {% for grandchild in grandchildren %}
+                                                <a class="text-decoration-none" href="{% url 'item' grandchild.id %}">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        {% with photo=grandchild.ordered_photos.0 %}
+                                                            {% if photo %}
+                                                                <img
+                                                                    src="{{ photo.image.url }}"
+                                                                    alt="Thumbnail for {{ grandchild.name }}"
+                                                                    class="rounded border"
+                                                                    style="width: 56px; height: 56px; object-fit: cover;"
+                                                                />
+                                                            {% else %}
+                                                                <div
+                                                                    class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
+                                                                    style="width: 56px; height: 56px;"
+                                                                >
+                                                                    —
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                        <div>
+                                                            <div class="fw-semibold text-dark">{{ grandchild.name }}</div>
+                                                            <div class="text-muted">{{ grandchild.category|default:"-" }}</div>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </li>
+            {% endif %}
+        {% endwith %}
+        {% if item.notes %}
+            <li class="list-group-item">
+                <span class="text-muted d-block mb-2">Notes</span>
+                <span>{{ item.notes }}</span>
+            </li>
+        {% endif %}
+        {% with documents=item.document_set.all %}
+            {% if documents %}
+                <li class="list-group-item">
+                    <span class="text-muted d-block mb-2">Documents</span>
                     <ul class="list-unstyled mb-0">
                         {% for document in documents %}
                             <li>
@@ -191,15 +240,13 @@
                             </li>
                         {% endfor %}
                     </ul>
-                {% else %}
-                    <span class="text-muted">-</span>
-                {% endif %}
-            {% endwith %}
-        </li>
-        <li class="list-group-item">
-            <span class="text-muted d-block mb-2">Links</span>
-            {% with links=item.link_set.all %}
-                {% if links %}
+                </li>
+            {% endif %}
+        {% endwith %}
+        {% with links=item.link_set.all %}
+            {% if links %}
+                <li class="list-group-item">
+                    <span class="text-muted d-block mb-2">Links</span>
                     <ul class="list-unstyled mb-0">
                         {% for link in links %}
                             <li>
@@ -212,19 +259,21 @@
                             </li>
                         {% endfor %}
                     </ul>
-                {% else %}
-                    <span class="text-muted">-</span>
-                {% endif %}
-            {% endwith %}
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Acquired at</span>
-            <span>{{ item.acquired_on|default:"-" }}</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Last tested at</span>
-            <span>{{ item.last_tested_on|default:"-" }}</span>
-        </li>
+                </li>
+            {% endif %}
+        {% endwith %}
+        {% if item.acquired_on %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Acquired at</span>
+                <span>{{ item.acquired_on }}</span>
+            </li>
+        {% endif %}
+        {% if item.last_tested_on %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="text-muted">Last tested at</span>
+                <span>{{ item.last_tested_on }}</span>
+            </li>
+        {% endif %}
         <li class="list-group-item d-flex justify-content-between">
             <span class="text-muted">Created at</span>
             <span>{{ item.created_at }}</span>

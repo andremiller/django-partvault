@@ -165,7 +165,7 @@ def collections(request):
 
 
 def item(request, item_id):
-    child_queryset = (
+    grandchild_queryset = (
         Item.objects.select_related("category")
         .prefetch_related(
             Prefetch(
@@ -173,6 +173,22 @@ def item(request, item_id):
                 queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
                 to_attr="ordered_photos",
             )
+        )
+        .order_by("name")
+    )
+    child_queryset = (
+        Item.objects.select_related("category")
+        .prefetch_related(
+            Prefetch(
+                "contained_items",
+                queryset=grandchild_queryset,
+                to_attr="ordered_children",
+            ),
+            Prefetch(
+                "photo_set",
+                queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+                to_attr="ordered_photos",
+            ),
         )
         .order_by("name")
     )
