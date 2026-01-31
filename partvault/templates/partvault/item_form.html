@@ -48,6 +48,7 @@
                             {{ status_formset.management_form }}
                             {% for related_form in status_formset %}
                                 {% bootstrap_field related_form.name show_label=False placeholder="Status name" %}
+                                {% bootstrap_field related_form.color show_label=False %}
                             {% endfor %}
                         </div>
                     </div>

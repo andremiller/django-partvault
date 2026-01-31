@@ -101,8 +101,23 @@ class Manufacturer(models.Model):
 
 
 class Status(models.Model):
+    class Color(models.TextChoices):
+        PRIMARY = "bg-primary", "Primary"
+        SECONDARY = "bg-secondary", "Secondary"
+        SUCCESS = "bg-success", "Success"
+        DANGER = "bg-danger", "Danger"
+        WARNING = "bg-warning", "Warning"
+        INFO = "bg-info", "Info"
+        LIGHT = "bg-light", "Light"
+        DARK = "bg-dark", "Dark"
+
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     name = models.CharField(max_length=120)
+    color = models.CharField(
+        max_length=20,
+        choices=Color.choices,
+        default=Color.INFO,
+    )
 
     class Meta:
         ordering = ["name"]

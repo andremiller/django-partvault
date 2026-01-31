@@ -76,9 +76,15 @@
                         {% endfor %}
                     </td>
                     <td>
-                        <span class="badge bg-info text-dark">
-                            {{ item.status|default:"-" }}
-                        </span>
+                        {% if item.status %}
+                            {% with status_color=item.status.color %}
+                                <span class="badge {{ status_color }}{% if status_color == "bg-light" or status_color == "bg-warning" or status_color == "bg-info" %} text-dark{% else %} text-light{% endif %}">
+                                    {{ item.status }}
+                                </span>
+                            {% endwith %}
+                        {% else %}
+                            <span class="badge bg-info text-dark">-</span>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}

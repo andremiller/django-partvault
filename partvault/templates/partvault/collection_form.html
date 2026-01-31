@@ -19,8 +19,11 @@
                             {% for related_form in status_formset %}
                                 {{ related_form.id }}
                                 <div class="row g-2 align-items-end mb-2">
-                                    <div class="col-md-9">
+                                    <div class="col-md-6">
                                         {% bootstrap_field related_form.name show_label=False placeholder="New status name" %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        {% bootstrap_field related_form.color show_label=False %}
                                     </div>
                                     <div class="col-md-3">
                                         {% if related_form.instance.pk %}

@@ -200,7 +200,7 @@ class ManufacturerForm(forms.ModelForm):
 class StatusForm(forms.ModelForm):
     class Meta:
         model = Status
-        fields = ["name"]
+        fields = ["name", "color"]
 
     def clean_name(self):
         return self.cleaned_data["name"].strip()

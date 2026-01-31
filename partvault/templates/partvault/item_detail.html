@@ -27,7 +27,15 @@
         {% if request.user.is_authenticated and request.user == item.collection.owner %}
             <a class="btn btn-sm btn-outline-primary" href="{% url 'item_edit' item.id %}">Edit</a>
         {% endif %}
-        <span class="badge bg-info text-dark">{{ item.status|default:"Unknown" }}</span>
+        {% if item.status %}
+            {% with status_color=item.status.color %}
+                <span class="badge {{ status_color }}{% if status_color == "bg-light" or status_color == "bg-warning" or status_color == "bg-info" %} text-dark{% else %} text-light{% endif %}">
+                    {{ item.status }}
+                </span>
+            {% endwith %}
+        {% else %}
+            <span class="badge bg-info text-dark">Unknown</span>
+        {% endif %}
     </div>
 </div>
 <div class="card">
