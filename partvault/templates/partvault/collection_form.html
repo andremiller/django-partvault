@@ -10,6 +10,85 @@
                 <form method="post">
                     {% csrf_token %}
                     {% bootstrap_form form %}
+                    {% if is_edit %}
+                        <hr class="my-4">
+                        <div class="mb-3">
+                            <h3 class="h5">Statuses</h3>
+                            {{ status_formset.non_form_errors }}
+                            {{ status_formset.management_form }}
+                            {% for related_form in status_formset %}
+                                {{ related_form.id }}
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-9">
+                                        {% bootstrap_field related_form.name show_label=False placeholder="New status name" %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        {% if related_form.instance.pk %}
+                                            <label class="form-label d-block">Delete</label>
+                                            {% bootstrap_field related_form.DELETE show_label=False %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <h3 class="h5">Categories</h3>
+                            {{ category_formset.non_form_errors }}
+                            {{ category_formset.management_form }}
+                            {% for related_form in category_formset %}
+                                {{ related_form.id }}
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-9">
+                                        {% bootstrap_field related_form.name show_label=False placeholder="New category name" %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        {% if related_form.instance.pk %}
+                                            <label class="form-label d-block">Delete</label>
+                                            {% bootstrap_field related_form.DELETE show_label=False %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <h3 class="h5">Manufacturers</h3>
+                            {{ manufacturer_formset.non_form_errors }}
+                            {{ manufacturer_formset.management_form }}
+                            {% for related_form in manufacturer_formset %}
+                                {{ related_form.id }}
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-9">
+                                        {% bootstrap_field related_form.name show_label=False placeholder="New manufacturer name" %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        {% if related_form.instance.pk %}
+                                            <label class="form-label d-block">Delete</label>
+                                            {% bootstrap_field related_form.DELETE show_label=False %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <h3 class="h5">Tags</h3>
+                            {{ tag_formset.non_form_errors }}
+                            {{ tag_formset.management_form }}
+                            {% for related_form in tag_formset %}
+                                {{ related_form.id }}
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-9">
+                                        {% bootstrap_field related_form.name show_label=False placeholder="New tag name" %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        {% if related_form.instance.pk %}
+                                            <label class="form-label d-block">Delete</label>
+                                            {% bootstrap_field related_form.DELETE show_label=False %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     <div class="d-flex gap-2">
                         <button class="btn btn-primary" type="submit">
                             {% if is_edit %}Save changes{% else %}Create collection{% endif %}

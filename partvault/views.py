@@ -289,6 +289,33 @@ def _build_related_formsets(item=None, post_data=None, files=None):
     }
 
 
+def _build_collection_related_formsets(collection, post_data=None):
+    CategoryFormSet = inlineformset_factory(
+        Collection, Category, form=CategoryForm, extra=2, can_delete=True
+    )
+    ManufacturerFormSet = inlineformset_factory(
+        Collection, Manufacturer, form=ManufacturerForm, extra=2, can_delete=True
+    )
+    StatusFormSet = inlineformset_factory(
+        Collection, Status, form=StatusForm, extra=2, can_delete=True
+    )
+    TagFormSet = inlineformset_factory(
+        Collection, Tag, form=TagForm, extra=3, can_delete=True
+    )
+    return {
+        "category_formset": CategoryFormSet(
+            post_data, instance=collection, prefix="category"
+        ),
+        "manufacturer_formset": ManufacturerFormSet(
+            post_data, instance=collection, prefix="manufacturer"
+        ),
+        "status_formset": StatusFormSet(
+            post_data, instance=collection, prefix="status"
+        ),
+        "tag_formset": TagFormSet(post_data, instance=collection, prefix="tag"),
+    }
+
+
 def _save_document_formset(formset, collection):
     instances = formset.save(commit=False)
     for form in formset:
@@ -516,10 +543,17 @@ def collection_create(request):
 @login_required
 def collection_edit(request, collection_id):
     collection = get_object_or_404(Collection, pk=collection_id, owner=request.user)
+    related_formsets = _build_collection_related_formsets(
+        collection,
+        post_data=request.POST if request.method == "POST" else None,
+    )
     if request.method == "POST":
         form = CollectionForm(request.POST, instance=collection)
-        if form.is_valid():
+        related_valid = all(formset.is_valid() for formset in related_formsets.values())
+        if form.is_valid() and related_valid:
             form.save()
+            for formset in related_formsets.values():
+                formset.save()
             messages.success(request, "Collection updated.")
             return redirect("collection", collection_id=collection.id)
     else:
@@ -529,6 +563,7 @@ def collection_edit(request, collection_id):
         "is_edit": True,
         "collection": collection,
         "cancel_url": "collection",
+        **related_formsets,
     }
     return render(request, "partvault/collection_form.html", context)
 

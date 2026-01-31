@@ -60,6 +60,7 @@ class Category(models.Model):
     name = models.CharField(max_length=120)
 
     class Meta:
+        ordering = ["name"]
         verbose_name_plural = "categories"
 
     def __str__(self) -> str:
@@ -81,6 +82,9 @@ class Tag(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     name = models.CharField(max_length=60)
 
+    class Meta:
+        ordering = ["name"]
+
     def __str__(self) -> str:
         return self.name
 
@@ -88,6 +92,9 @@ class Tag(models.Model):
 class Manufacturer(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     name = models.CharField(max_length=120)
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self) -> str:
         return self.name
@@ -98,6 +105,7 @@ class Status(models.Model):
     name = models.CharField(max_length=120)
 
     class Meta:
+        ordering = ["name"]
         verbose_name_plural = "statuses"
 
     def __str__(self) -> str:
