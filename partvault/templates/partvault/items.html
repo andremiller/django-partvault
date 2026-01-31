@@ -42,7 +42,7 @@
                             {% if photo %}
                                 <a href="{% url 'item' item.id %}" class="d-inline-block">
                                     <img
-                                        src="{{ photo.image.url }}"
+                                        src="{% url 'photo_image_scaled' photo.id 120 %}"
                                         alt="Thumbnail for {{ item.name }}"
                                         class="rounded border"
                                         style="width: 56px; height: 56px; object-fit: cover;"

@@ -59,7 +59,7 @@
                                     {% for photo in collection.thumbnail_photos %}
                                         <div class="d-inline-block collection-card-thumb">
                                             <img
-                                                src="{{ photo.image.url }}"
+                                                src="{% url 'photo_image_scaled' photo.id 120 %}"
                                                 alt="Thumbnail for {{ photo.item.name }}"
                                                 class="rounded border"
                                                 style="width: 56px; height: 56px; object-fit: cover;"
@@ -113,7 +113,7 @@
                             {% for photo in collection.thumbnail_photos %}
                                 <div class="d-inline-block collection-card-thumb">
                                     <img
-                                        src="{{ photo.image.url }}"
+                                        src="{% url 'photo_image_scaled' photo.id 120 %}"
                                         alt="Thumbnail for {{ photo.item.name }}"
                                         class="rounded border"
                                         style="width: 56px; height: 56px; object-fit: cover;"

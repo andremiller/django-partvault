@@ -1,15 +1,19 @@
-from django.shortcuts import render, get_object_or_404, redirect
 from collections import defaultdict
+from io import BytesIO
+from mimetypes import guess_type
 
-from django.db.models import Count, Max, Prefetch, Q
-from django.http import HttpResponse
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.decorators import login_required
+from PIL import Image, ImageOps
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash, login
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.views.decorators.http import require_POST
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Count, Max, Prefetch, Q
 from django.forms import formset_factory, inlineformset_factory
+from django.http import FileResponse, Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from .models import (
     AssetTagSequence,
@@ -88,6 +92,60 @@ def _int_to_base36(value: int) -> str:
         value, rem = divmod(value, 36)
         chars.append(alphabet[rem])
     return "".join(reversed(chars))
+
+
+def _user_can_view_photo(request, photo: Photo) -> bool:
+    if photo.item.collection.is_public:
+        return True
+    if not request.user.is_authenticated:
+        return False
+    return photo.item.collection.owner_id == request.user.id
+
+
+def _serialize_resized_image(image: Image.Image, output_format: str) -> bytes:
+    buffer = BytesIO()
+    if output_format == "JPEG":
+        image = image.convert("RGB")
+    image.save(buffer, format=output_format, optimize=True)
+    return buffer.getvalue()
+
+
+def photo_image(request, photo_id, long_edge=None):
+    photo = get_object_or_404(
+        Photo.objects.select_related("item__collection"), pk=photo_id
+    )
+    if not photo.image:
+        raise Http404("Photo not found")
+    if not _user_can_view_photo(request, photo):
+        raise Http404("Photo not found")
+
+    content_type, _ = guess_type(photo.image.name)
+    if not content_type:
+        content_type = "application/octet-stream"
+
+    if long_edge is None:
+        photo.image.open("rb")
+        return FileResponse(photo.image, content_type=content_type)
+
+    if long_edge < 1:
+        return HttpResponse(b"Invalid image size.", status=400)
+
+    photo.image.open("rb")
+    image = Image.open(photo.image)
+    image = ImageOps.exif_transpose(image)
+    width, height = image.size
+    max_edge = max(width, height)
+    if long_edge >= max_edge:
+        photo.image.seek(0)
+        return FileResponse(photo.image, content_type=content_type)
+
+    scale = long_edge / max_edge
+    new_size = (max(1, int(width * scale)), max(1, int(height * scale)))
+    resized = image.resize(new_size, Image.Resampling.LANCZOS)
+    output_format = image.format or "JPEG"
+    content_type = Image.MIME.get(output_format, "image/jpeg")
+    data = _serialize_resized_image(resized, output_format)
+    return HttpResponse(data, content_type=content_type)
 
 
 def index(request):
@@ -236,7 +294,9 @@ def item(request, item_id):
     og_image_url = None
     photo = item.ordered_photos[0] if item.ordered_photos else None
     if photo and photo.image:
-        og_image_url = request.build_absolute_uri(photo.image.url)
+        og_image_url = request.build_absolute_uri(
+            reverse("photo_image_scaled", args=[photo.id, 1200])
+        )
     context = {
         "item": item,
         "og_title": item.name or "Item",

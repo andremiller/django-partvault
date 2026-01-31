@@ -105,7 +105,7 @@
                         {% with photo=item.parent_item.ordered_photos.0 %}
                             {% if photo %}
                                 <img
-                                    src="{{ photo.image.url }}"
+                                    src="{% url 'photo_image_scaled' photo.id 120 %}"
                                     alt="Thumbnail for {{ item.parent_item.name }}"
                                     class="rounded border"
                                     style="width: 56px; height: 56px; object-fit: cover;"
@@ -134,10 +134,10 @@
                     <div class="row g-2">
                         {% for photo in photos %}
                             <div class="col-6 col-md-4">
-                                <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                                <a href="{% url 'photo_image' photo.id %}" target="_blank" rel="noopener">
                                     <img
                                         class="img-fluid rounded border"
-                                        src="{{ photo.image.url }}"
+                                        src="{% url 'photo_image' photo.id %}"
                                         alt="Photo for {{ item.name }}"
                                     />
                                 </a>
@@ -159,7 +159,7 @@
                                         {% with photo=child.ordered_photos.0 %}
                                             {% if photo %}
                                                 <img
-                                                    src="{{ photo.image.url }}"
+                                                    src="{% url 'photo_image_scaled' photo.id 120 %}"
                                                     alt="Thumbnail for {{ child.name }}"
                                                     class="rounded border"
                                                     style="width: 56px; height: 56px; object-fit: cover;"
@@ -188,7 +188,7 @@
                                                         {% with photo=grandchild.ordered_photos.0 %}
                                                             {% if photo %}
                                                                 <img
-                                                                    src="{{ photo.image.url }}"
+                                                                    src="{% url 'photo_image_scaled' photo.id 120 %}"
                                                                     alt="Thumbnail for {{ grandchild.name }}"
                                                                     class="rounded border"
                                                                     style="width: 56px; height: 56px; object-fit: cover;"

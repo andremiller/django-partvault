@@ -5,6 +5,12 @@ from . import views
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("image/<int:photo_id>/", views.photo_image, name="photo_image"),
+    path(
+        "image/<int:photo_id>/<int:long_edge>/",
+        views.photo_image,
+        name="photo_image_scaled",
+    ),
     path("items/<int:collection_id>/", views.items, name="items"),
     path("items/new/", views.item_create, name="item_create"),
     path("items/<int:item_id>/edit/", views.item_edit, name="item_edit"),
