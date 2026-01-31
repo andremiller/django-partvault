@@ -121,7 +121,14 @@
                         {% endwith %}
                         <div>
                             <div class="fw-semibold text-dark">{{ item.parent_item.name }}</div>
-                            <div class="text-muted">{{ item.parent_item.category|default:"-" }}</div>
+                            <div class="text-muted">
+                                {{ item.parent_item.category|default:"-" }}
+                                {% if item.parent_item.tags.exists %}
+                                    {% for tag in item.parent_item.tags.all %}
+                                        <span class="badge bg-secondary ms-1">{{ tag }}</span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </a>
@@ -175,7 +182,14 @@
                                         {% endwith %}
                                         <div>
                                             <div class="fw-semibold text-dark">{{ child.name }}</div>
-                                            <div class="text-muted">{{ child.category|default:"-" }}</div>
+                                            <div class="text-muted">
+                                                {{ child.category|default:"-" }}
+                                                {% if child.tags.exists %}
+                                                    {% for tag in child.tags.all %}
+                                                        <span class="badge bg-secondary ms-1">{{ tag }}</span>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </a>
@@ -204,7 +218,14 @@
                                                         {% endwith %}
                                                         <div>
                                                             <div class="fw-semibold text-dark">{{ grandchild.name }}</div>
-                                                            <div class="text-muted">{{ grandchild.category|default:"-" }}</div>
+                                                            <div class="text-muted">
+                                                                {{ grandchild.category|default:"-" }}
+                                                                {% if grandchild.tags.exists %}
+                                                                    {% for tag in grandchild.tags.all %}
+                                                                        <span class="badge bg-secondary ms-1">{{ tag }}</span>
+                                                                    {% endfor %}
+                                                                {% endif %}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </a>
