@@ -202,6 +202,38 @@ def items(request, collection_id):
             )
         )
     )
+    invalid_filter = False
+    category_id = request.GET.get("category")
+    if category_id is not None:
+        try:
+            category_id = int(category_id)
+        except (TypeError, ValueError):
+            invalid_filter = True
+        else:
+            item_list = item_list.filter(category_id=category_id)
+    manufacturer_id = request.GET.get("manufacturer")
+    if manufacturer_id is not None:
+        try:
+            manufacturer_id = int(manufacturer_id)
+        except (TypeError, ValueError):
+            invalid_filter = True
+        else:
+            item_list = item_list.filter(manufacturer_id=manufacturer_id)
+    tag_ids = request.GET.getlist("tag")
+    if tag_ids:
+        parsed_tag_ids = []
+        for tag_id in tag_ids:
+            try:
+                parsed_tag_ids.append(int(tag_id))
+            except (TypeError, ValueError):
+                invalid_filter = True
+                break
+        if not invalid_filter:
+            for tag_id in parsed_tag_ids:
+                item_list = item_list.filter(tags__id=tag_id)
+            item_list = item_list.distinct()
+    if invalid_filter:
+        item_list = item_list.none()
     context = {"item_list": item_list, "collection": collection}
     return render(request, "partvault/items.html", context)
 
