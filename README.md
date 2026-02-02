@@ -17,6 +17,15 @@ Built with Python and Django
 - Photo uploads directly from mobile camera
 - Attachments
 
+### Screenshots
+
+#### Homepage
+![Image](https://github.com/user-attachments/assets/19e0e0ff-e95f-450c-845f-34517e28cb27)
+#### Item List
+![Image](https://github.com/user-attachments/assets/bea6b15b-7890-43da-8145-04af3a558128)
+#### Item Detail
+![Image](https://github.com/user-attachments/assets/7886e49a-b703-46fd-b87a-6144b14c4b62)
+
 ## Getting Started
 
 Note, instructions below are to get started with a dev instance, instructions to run in production mode to follow later.
