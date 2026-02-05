@@ -11,7 +11,6 @@ from .models import (
     Document,
     Item,
     Link,
-    Location,
     Manufacturer,
     Photo,
     Profile,
@@ -108,7 +107,6 @@ class ItemForm(forms.ModelForm):
     def _limit_related_querysets(self, collection):
         if collection is None:
             self.fields["category"].queryset = Category.objects.none()
-            self.fields["location"].queryset = Location.objects.none()
             self.fields["manufacturer"].queryset = Manufacturer.objects.none()
             self.fields["status"].queryset = Status.objects.none()
             self.fields["parent_item"].queryset = Item.objects.none()
@@ -119,9 +117,6 @@ class ItemForm(forms.ModelForm):
         owner_id = owner.id
         user_filter = Q(user=owner) | Q(user__isnull=True)
         self.fields["category"].queryset = Category.objects.filter(user_filter)
-        self.fields["location"].queryset = Location.objects.filter(
-            collection=collection
-        )
         self.fields["manufacturer"].queryset = Manufacturer.objects.filter(user_filter)
         self.fields["status"].queryset = Status.objects.filter(user_filter)
         parent_queryset = Item.objects.filter(collection=collection)
@@ -145,11 +140,14 @@ class ItemForm(forms.ModelForm):
     def clean_name(self):
         return (self.cleaned_data.get("name") or "").strip()
 
+    def clean_location(self):
+        return (self.cleaned_data.get("location") or "").strip()
+
     def clean(self):
         cleaned_data = super().clean()
         collection = cleaned_data.get("collection")
         owner_id = collection.owner_id if collection else None
-        collection_fields = ["location", "parent_item"]
+        collection_fields = ["parent_item"]
         user_fields = ["category", "manufacturer", "status"]
         for field_name in collection_fields:
             value = cleaned_data.get(field_name)
@@ -188,15 +186,6 @@ class UserProfileForm(forms.ModelForm):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ["name"]
-
-    def clean_name(self):
-        return self.cleaned_data["name"].strip()
-
-
-class LocationForm(forms.ModelForm):
-    class Meta:
-        model = Location
         fields = ["name"]
 
     def clean_name(self):

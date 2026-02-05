@@ -9,7 +9,6 @@ from .models import (
     Item,
     Link,
     LinkType,
-    Location,
     Manufacturer,
     Photo,
     Profile,
@@ -64,7 +63,6 @@ class StatusAdmin(admin.ModelAdmin):
 
 admin.site.register(AssetTagSequence)
 admin.site.register(Collection)
-admin.site.register(Location)
 admin.site.register(DocumentType)
 admin.site.register(Document)
 admin.site.register(LinkType)

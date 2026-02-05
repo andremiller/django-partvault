@@ -52,18 +52,7 @@
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            {% bootstrap_field form.location %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">New location</label>
-                            {{ location_formset.management_form }}
-                            {% for related_form in location_formset %}
-                                {% bootstrap_field related_form.name show_label=False placeholder="Location name" %}
-                            {% endfor %}
-                        </div>
-                    </div>
+                    {% bootstrap_field form.location %}
                     {% bootstrap_field form.parent_item %}
                     <div class="row g-3">
                         <div class="col-md-8">
