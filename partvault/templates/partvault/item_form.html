@@ -16,7 +16,7 @@
                             {% bootstrap_field form.category %}
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">New category</label>
+                            <label class="form-label">Custom Category</label>
                             {{ category_formset.management_form }}
                             {% for related_form in category_formset %}
                                 {% bootstrap_field related_form.name show_label=False placeholder="Category name" %}
@@ -28,7 +28,7 @@
                             {% bootstrap_field form.manufacturer %}
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">New manufacturer</label>
+                            <label class="form-label">Custom Manufacter</label>
                             {{ manufacturer_formset.management_form }}
                             {% for related_form in manufacturer_formset %}
                                 {% bootstrap_field related_form.name show_label=False placeholder="Manufacturer name" %}
@@ -44,7 +44,7 @@
                             {% bootstrap_field form.status %}
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">New status</label>
+                            <label class="form-label">Custom Status</label>
                             {{ status_formset.management_form }}
                             {% for related_form in status_formset %}
                                 {% bootstrap_field related_form.name show_label=False placeholder="Status name" %}
@@ -70,7 +70,7 @@
                             {% bootstrap_field form.tags %}
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">New tags</label>
+                            <label class="form-label">Custom Tags</label>
                             {{ tag_formset.management_form }}
                             {% for related_form in tag_formset %}
                                 {% bootstrap_field related_form.name show_label=False placeholder="Tag name" %}

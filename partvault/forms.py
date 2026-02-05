@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Q
 
 from .models import (
     Category,
@@ -115,17 +116,31 @@ class ItemForm(forms.ModelForm):
             return
 
         owner = collection.owner
-        self.fields["category"].queryset = Category.objects.filter(user=owner)
+        owner_id = owner.id
+        user_filter = Q(user=owner) | Q(user__isnull=True)
+        self.fields["category"].queryset = Category.objects.filter(user_filter)
         self.fields["location"].queryset = Location.objects.filter(
             collection=collection
         )
-        self.fields["manufacturer"].queryset = Manufacturer.objects.filter(user=owner)
-        self.fields["status"].queryset = Status.objects.filter(user=owner)
+        self.fields["manufacturer"].queryset = Manufacturer.objects.filter(user_filter)
+        self.fields["status"].queryset = Status.objects.filter(user_filter)
         parent_queryset = Item.objects.filter(collection=collection)
         if self.instance and self.instance.pk:
             parent_queryset = parent_queryset.exclude(pk=self.instance.pk)
         self.fields["parent_item"].queryset = parent_queryset
-        self.fields["tags"].queryset = Tag.objects.filter(user=owner)
+        self.fields["tags"].queryset = Tag.objects.filter(user_filter)
+
+        def label_with_custom_marker(obj):
+            if obj.user_id == owner_id:
+                return f"🖋️ {obj}"
+            if obj.user_id is None:
+                return f"🌐 {obj}"
+            return str(obj)
+
+        self.fields["category"].label_from_instance = label_with_custom_marker
+        self.fields["manufacturer"].label_from_instance = label_with_custom_marker
+        self.fields["status"].label_from_instance = label_with_custom_marker
+        self.fields["tags"].label_from_instance = label_with_custom_marker
 
     def clean_name(self):
         return (self.cleaned_data.get("name") or "").strip()
@@ -145,7 +160,7 @@ class ItemForm(forms.ModelForm):
                 )
         for field_name in user_fields:
             value = cleaned_data.get(field_name)
-            if value and owner_id and value.user_id != owner_id:
+            if value and owner_id and value.user_id not in (owner_id, None):
                 self.add_error(
                     field_name,
                     "Selection must belong to the collection owner.",
@@ -154,7 +169,7 @@ class ItemForm(forms.ModelForm):
         tags = cleaned_data.get("tags")
         if tags and owner_id:
             for tag in tags:
-                if tag.user_id != owner_id:
+                if tag.user_id not in (owner_id, None):
                     self.add_error(
                         "tags",
                         "All tags must belong to the collection owner.",
