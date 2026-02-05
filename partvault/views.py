@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Max, Prefetch, Q
-from django.forms import formset_factory, inlineformset_factory
+from django.forms import formset_factory, inlineformset_factory, modelformset_factory
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -363,7 +363,23 @@ def _build_item_formsets(post_data=None):
     }
 
 
-def _save_inline_objects(formset, model, collection):
+def _save_user_inline_objects(formset, model, user):
+    created = []
+    for form in formset:
+        if not form.cleaned_data:
+            continue
+        name = form.cleaned_data.get("name", "").strip()
+        if not name:
+            continue
+        defaults = {}
+        if "color" in form.cleaned_data and form.cleaned_data.get("color"):
+            defaults["color"] = form.cleaned_data["color"]
+        obj, _ = model.objects.get_or_create(user=user, name=name, defaults=defaults)
+        created.append(obj)
+    return created
+
+
+def _save_collection_inline_objects(formset, model, collection):
     created = []
     for form in formset:
         if not form.cleaned_data:
@@ -397,31 +413,48 @@ def _build_related_formsets(item=None, post_data=None, files=None):
     }
 
 
-def _build_collection_related_formsets(collection, post_data=None):
-    CategoryFormSet = inlineformset_factory(
-        Collection, Category, form=CategoryForm, extra=2, can_delete=True
+def _build_user_related_formsets(user, post_data=None):
+    CategoryFormSet = modelformset_factory(
+        Category, form=CategoryForm, extra=2, can_delete=True
     )
-    ManufacturerFormSet = inlineformset_factory(
-        Collection, Manufacturer, form=ManufacturerForm, extra=2, can_delete=True
+    ManufacturerFormSet = modelformset_factory(
+        Manufacturer, form=ManufacturerForm, extra=2, can_delete=True
     )
-    StatusFormSet = inlineformset_factory(
-        Collection, Status, form=StatusForm, extra=2, can_delete=True
+    StatusFormSet = modelformset_factory(
+        Status, form=StatusForm, extra=2, can_delete=True
     )
-    TagFormSet = inlineformset_factory(
-        Collection, Tag, form=TagForm, extra=3, can_delete=True
-    )
+    TagFormSet = modelformset_factory(Tag, form=TagForm, extra=3, can_delete=True)
     return {
         "category_formset": CategoryFormSet(
-            post_data, instance=collection, prefix="category"
+            post_data,
+            queryset=Category.objects.filter(user=user),
+            prefix="category",
         ),
         "manufacturer_formset": ManufacturerFormSet(
-            post_data, instance=collection, prefix="manufacturer"
+            post_data,
+            queryset=Manufacturer.objects.filter(user=user),
+            prefix="manufacturer",
         ),
         "status_formset": StatusFormSet(
-            post_data, instance=collection, prefix="status"
+            post_data,
+            queryset=Status.objects.filter(user=user),
+            prefix="status",
         ),
-        "tag_formset": TagFormSet(post_data, instance=collection, prefix="tag"),
+        "tag_formset": TagFormSet(
+            post_data,
+            queryset=Tag.objects.filter(user=user),
+            prefix="tag",
+        ),
     }
+
+
+def _save_user_formset(formset, user):
+    instances = formset.save(commit=False)
+    for instance in instances:
+        instance.user = user
+        instance.save()
+    for instance in formset.deleted_objects:
+        instance.delete()
 
 
 def _save_document_formset(formset, collection):
@@ -489,20 +522,20 @@ def item_create(request):
                 _save_document_formset(related_formsets["document_formset"], collection)
                 related_formsets["link_formset"].instance = item
                 _save_link_formset(related_formsets["link_formset"], collection)
-                new_categories = _save_inline_objects(
-                    formsets["category_formset"], Category, collection
+                new_categories = _save_user_inline_objects(
+                    formsets["category_formset"], Category, collection.owner
                 )
-                new_locations = _save_inline_objects(
+                new_locations = _save_collection_inline_objects(
                     formsets["location_formset"], Location, collection
                 )
-                new_manufacturers = _save_inline_objects(
-                    formsets["manufacturer_formset"], Manufacturer, collection
+                new_manufacturers = _save_user_inline_objects(
+                    formsets["manufacturer_formset"], Manufacturer, collection.owner
                 )
-                new_statuses = _save_inline_objects(
-                    formsets["status_formset"], Status, collection
+                new_statuses = _save_user_inline_objects(
+                    formsets["status_formset"], Status, collection.owner
                 )
-                new_tags = _save_inline_objects(
-                    formsets["tag_formset"], Tag, collection
+                new_tags = _save_user_inline_objects(
+                    formsets["tag_formset"], Tag, collection.owner
                 )
                 if not item.category and new_categories:
                     item.category = new_categories[0]
@@ -562,20 +595,20 @@ def item_edit(request, item_id):
                 related_formsets["photo_formset"].save()
                 _save_document_formset(related_formsets["document_formset"], collection)
                 _save_link_formset(related_formsets["link_formset"], collection)
-                new_categories = _save_inline_objects(
-                    formsets["category_formset"], Category, collection
+                new_categories = _save_user_inline_objects(
+                    formsets["category_formset"], Category, collection.owner
                 )
-                new_locations = _save_inline_objects(
+                new_locations = _save_collection_inline_objects(
                     formsets["location_formset"], Location, collection
                 )
-                new_manufacturers = _save_inline_objects(
-                    formsets["manufacturer_formset"], Manufacturer, collection
+                new_manufacturers = _save_user_inline_objects(
+                    formsets["manufacturer_formset"], Manufacturer, collection.owner
                 )
-                new_statuses = _save_inline_objects(
-                    formsets["status_formset"], Status, collection
+                new_statuses = _save_user_inline_objects(
+                    formsets["status_formset"], Status, collection.owner
                 )
-                new_tags = _save_inline_objects(
-                    formsets["tag_formset"], Tag, collection
+                new_tags = _save_user_inline_objects(
+                    formsets["tag_formset"], Tag, collection.owner
                 )
                 if not item.category and new_categories:
                     item.category = new_categories[0]
@@ -651,17 +684,10 @@ def collection_create(request):
 @login_required
 def collection_edit(request, collection_id):
     collection = get_object_or_404(Collection, pk=collection_id, owner=request.user)
-    related_formsets = _build_collection_related_formsets(
-        collection,
-        post_data=request.POST if request.method == "POST" else None,
-    )
     if request.method == "POST":
         form = CollectionForm(request.POST, instance=collection)
-        related_valid = all(formset.is_valid() for formset in related_formsets.values())
-        if form.is_valid() and related_valid:
+        if form.is_valid():
             form.save()
-            for formset in related_formsets.values():
-                formset.save()
             messages.success(request, "Collection updated.")
             return redirect("collection", collection_id=collection.id)
     else:
@@ -671,7 +697,6 @@ def collection_edit(request, collection_id):
         "is_edit": True,
         "collection": collection,
         "cancel_url": "collection",
-        **related_formsets,
     }
     return render(request, "partvault/collection_form.html", context)
 
@@ -776,6 +801,9 @@ def profile_edit(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
     if request.method == "POST":
         action = request.POST.get("action")
+        user_formsets = _build_user_related_formsets(
+            request.user, post_data=request.POST if action == "item_defaults" else None
+        )
         if action == "details":
             profile_form = ProfileForm(request.POST, instance=profile)
             user_form = UserProfileForm(request.POST, instance=request.user)
@@ -794,11 +822,21 @@ def profile_edit(request):
                 update_session_auth_hash(request, request.user)
                 messages.success(request, "Password updated.")
                 return redirect("profile")
+        elif action == "item_defaults":
+            profile_form = ProfileForm(instance=profile)
+            user_form = UserProfileForm(instance=request.user)
+            password_form = PasswordChangeForm(user=request.user)
+            if all(formset.is_valid() for formset in user_formsets.values()):
+                for formset in user_formsets.values():
+                    _save_user_formset(formset, request.user)
+                messages.success(request, "Item defaults updated.")
+                return redirect("profile_edit")
         else:
             profile_form = ProfileForm(instance=profile)
             user_form = UserProfileForm(instance=request.user)
             password_form = PasswordChangeForm(user=request.user)
     else:
+        user_formsets = _build_user_related_formsets(request.user)
         profile_form = ProfileForm(instance=profile)
         user_form = UserProfileForm(instance=request.user)
         password_form = PasswordChangeForm(user=request.user)
@@ -806,6 +844,7 @@ def profile_edit(request):
         "profile_form": profile_form,
         "user_form": user_form,
         "password_form": password_form,
+        **user_formsets,
     }
     return render(request, "partvault/profile_edit.html", context)
 

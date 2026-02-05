@@ -38,13 +38,33 @@ class ItemAdmin(admin.ModelAdmin):
     inlines = [PhotoInline, DocumentInline, LinkInline]
 
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ["name", "user"]
+    list_select_related = ["user"]
+
+
+@admin.register(Manufacturer)
+class ManufacturerAdmin(admin.ModelAdmin):
+    list_display = ["name", "user"]
+    list_select_related = ["user"]
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ["name", "user"]
+    list_select_related = ["user"]
+
+
+@admin.register(Status)
+class StatusAdmin(admin.ModelAdmin):
+    list_display = ["name", "user", "color"]
+    list_select_related = ["user"]
+
+
 admin.site.register(AssetTagSequence)
 admin.site.register(Collection)
-admin.site.register(Category)
 admin.site.register(Location)
-admin.site.register(Manufacturer)
-admin.site.register(Status)
-admin.site.register(Tag)
 admin.site.register(DocumentType)
 admin.site.register(Document)
 admin.site.register(LinkType)

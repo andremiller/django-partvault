@@ -114,21 +114,18 @@ class ItemForm(forms.ModelForm):
             self.fields["tags"].queryset = Tag.objects.none()
             return
 
-        self.fields["category"].queryset = Category.objects.filter(
-            collection=collection
-        )
+        owner = collection.owner
+        self.fields["category"].queryset = Category.objects.filter(user=owner)
         self.fields["location"].queryset = Location.objects.filter(
             collection=collection
         )
-        self.fields["manufacturer"].queryset = Manufacturer.objects.filter(
-            collection=collection
-        )
-        self.fields["status"].queryset = Status.objects.filter(collection=collection)
+        self.fields["manufacturer"].queryset = Manufacturer.objects.filter(user=owner)
+        self.fields["status"].queryset = Status.objects.filter(user=owner)
         parent_queryset = Item.objects.filter(collection=collection)
         if self.instance and self.instance.pk:
             parent_queryset = parent_queryset.exclude(pk=self.instance.pk)
         self.fields["parent_item"].queryset = parent_queryset
-        self.fields["tags"].queryset = Tag.objects.filter(collection=collection)
+        self.fields["tags"].queryset = Tag.objects.filter(user=owner)
 
     def clean_name(self):
         return (self.cleaned_data.get("name") or "").strip()
@@ -136,28 +133,31 @@ class ItemForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         collection = cleaned_data.get("collection")
-        related_fields = [
-            "category",
-            "location",
-            "manufacturer",
-            "status",
-            "parent_item",
-        ]
-        for field_name in related_fields:
+        owner_id = collection.owner_id if collection else None
+        collection_fields = ["location", "parent_item"]
+        user_fields = ["category", "manufacturer", "status"]
+        for field_name in collection_fields:
             value = cleaned_data.get(field_name)
             if value and collection and value.collection_id != collection.id:
                 self.add_error(
                     field_name,
                     "Selection must belong to the chosen collection.",
                 )
+        for field_name in user_fields:
+            value = cleaned_data.get(field_name)
+            if value and owner_id and value.user_id != owner_id:
+                self.add_error(
+                    field_name,
+                    "Selection must belong to the collection owner.",
+                )
 
         tags = cleaned_data.get("tags")
-        if tags and collection:
+        if tags and owner_id:
             for tag in tags:
-                if tag.collection_id != collection.id:
+                if tag.user_id != owner_id:
                     self.add_error(
                         "tags",
-                        "All tags must belong to the chosen collection.",
+                        "All tags must belong to the collection owner.",
                     )
                     break
 

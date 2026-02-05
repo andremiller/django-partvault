@@ -56,7 +56,9 @@ class Profile(models.Model):
 
 
 class Category(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=120)
 
     class Meta:
@@ -79,7 +81,9 @@ class Location(models.Model):
 
 
 class Tag(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=60)
 
     class Meta:
@@ -90,7 +94,9 @@ class Tag(models.Model):
 
 
 class Manufacturer(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=120)
 
     class Meta:
@@ -111,7 +117,9 @@ class Status(models.Model):
         LIGHT = "bg-light", "Light"
         DARK = "bg-dark", "Dark"
 
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=120)
     color = models.CharField(
         max_length=20,
