@@ -4,45 +4,53 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-sm-10 col-md-8 col-lg-6">
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm pv-form-card mb-4">
             <div class="card-body">
-                <h1 class="h4 mb-3">Edit profile</h1>
+                <h1 class="h4 mb-1 pv-page-title">Edit profile</h1>
+                <p class="pv-subtle mb-3">Update account details and profile defaults.</p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="details">
-                    {% bootstrap_form user_form %}
-                    {% bootstrap_form profile_form %}
-                    <div class="d-flex gap-2">
+                    <section class="pv-form-section mb-3">
+                        <h2 class="h6 pv-form-section-title">Account details</h2>
+                        {% bootstrap_form user_form %}
+                        {% bootstrap_form profile_form %}
+                    </section>
+                    <div class="d-flex gap-2 flex-wrap pv-form-actions">
                         <button class="btn btn-primary" type="submit">Save changes</button>
                         <a class="btn btn-outline-secondary" href="{% url 'profile' %}">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
-        <div class="card shadow-sm">
+        <div class="card shadow-sm pv-form-card">
             <div class="card-body">
                 <h2 class="h5 mb-3">Change password</h2>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="password">
-                    {% bootstrap_form password_form %}
+                    <section class="pv-form-section mb-3">
+                        <h3 class="h6 pv-form-section-title">Security</h3>
+                        {% bootstrap_form password_form %}
+                    </section>
                     <button class="btn btn-outline-primary" type="submit">Update password</button>
                 </form>
             </div>
         </div>
-        <div class="card shadow-sm mt-4">
+        <div class="card shadow-sm pv-form-card mt-4">
             <div class="card-body">
-                <h2 class="h5 mb-3">Custom item values</h2>
+                <h2 class="h5 mb-1">Custom item values</h2>
+                <p class="pv-subtle mb-3">Manage your personal categories, statuses, manufacturers, and tags.</p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="item_defaults">
-                    <div class="mb-3">
-                        <h3 class="h6">Statuses</h3>
+                    <section class="pv-form-section mb-3">
+                        <h3 class="h6 pv-form-section-title">Statuses</h3>
                         {{ status_formset.non_form_errors }}
                         {{ status_formset.management_form }}
                         {% for related_form in status_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-6">
                                     {% bootstrap_field related_form.name show_label=False placeholder="New status name" %}
                                 </div>
@@ -51,70 +59,70 @@
                                 </div>
                                 <div class="col-md-3">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        <h3 class="h6">Categories</h3>
+                    </section>
+                    <section class="pv-form-section mb-3">
+                        <h3 class="h6 pv-form-section-title">Categories</h3>
                         {{ category_formset.non_form_errors }}
                         {{ category_formset.management_form }}
                         {% for related_form in category_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-9">
                                     {% bootstrap_field related_form.name show_label=False placeholder="New category name" %}
                                 </div>
                                 <div class="col-md-3">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        <h3 class="h6">Manufacturers</h3>
+                    </section>
+                    <section class="pv-form-section mb-3">
+                        <h3 class="h6 pv-form-section-title">Manufacturers</h3>
                         {{ manufacturer_formset.non_form_errors }}
                         {{ manufacturer_formset.management_form }}
                         {% for related_form in manufacturer_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-9">
                                     {% bootstrap_field related_form.name show_label=False placeholder="New manufacturer name" %}
                                 </div>
                                 <div class="col-md-3">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        <h3 class="h6">Tags</h3>
+                    </section>
+                    <section class="pv-form-section mb-3">
+                        <h3 class="h6 pv-form-section-title">Tags</h3>
                         {{ tag_formset.non_form_errors }}
                         {{ tag_formset.management_form }}
                         {% for related_form in tag_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-9">
                                     {% bootstrap_field related_form.name show_label=False placeholder="New tag name" %}
                                 </div>
                                 <div class="col-md-3">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
+                    </section>
                     <button class="btn btn-primary" type="submit">Save custom item values</button>
                 </form>
             </div>

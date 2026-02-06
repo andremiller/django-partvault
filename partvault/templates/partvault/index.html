@@ -1,48 +1,23 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-<style>
-    .collection-card {
-        position: relative;
-        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-    }
-
-    .collection-card:hover {
-        background-color: #e9f2ff;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
-        transform: translateY(-2px);
-    }
-
-    .collection-card-link {
-        position: absolute;
-        inset: 0;
-        z-index: 2;
-        text-indent: -9999px;
-    }
-
-    .collection-card-thumb {
-        position: relative;
-        z-index: 1;
-        pointer-events: none;
-    }
-</style>
-<div class="p-4 p-md-5 mb-4 bg-light rounded-3">
+<div class="p-4 p-md-5 mb-4 pv-hero">
     <div class="container-fluid py-2">
         <h1 class="display-6 fw-semibold">Welcome to PartVault</h1>
-        <p class="lead text-muted mb-0">This is Part Vault. Yet another inventory management program that lets you keep track of what you have, where it is, what it looks like, and share the mess with others.</p>
+        <p class="lead pv-subtle mb-0">Catalog vintage hardware, track ownership and condition, and keep the details searchable for future repairs and restorations.</p>
     </div>
 </div>
 {% if request.user.is_authenticated %}
-    <div class="d-flex align-items-center gap-2 mb-2">
+    <div class="pv-section-head">
         <h2 class="h6 mb-0">My Collections</h2>
         <span class="badge bg-secondary">{{ my_collections|length }}</span>
     </div>
     <div class="row g-3 mb-4">
         {% for collection in my_collections %}
             <div class="col-12 col-md-6 col-lg-4">
-                <div class="card h-100 collection-card">
+                <div class="card h-100 pv-collection-card">
                     <a
-                        class="collection-card-link"
+                        class="pv-collection-link"
                         href="{% url 'items' collection.id %}"
                         aria-label="View {{ collection.name }} collection"
                     >
@@ -53,22 +28,21 @@
                             <h3 class="h5 fw-semibold mb-1">{{ collection.name }}</h3>
                             <span class="badge bg-secondary">{{ collection.item_count }} items</span>
                         </div>
-                        <p class="text-muted mb-2">Owner: {{ collection.owner_code }}</p>
+                        <p class="pv-subtle mb-2">Owner: {{ collection.owner_code }}</p>
                             {% if collection.thumbnail_photos %}
                                 <div class="d-flex flex-wrap gap-2 mb-2">
                                     {% for photo in collection.thumbnail_photos %}
-                                        <div class="d-inline-block collection-card-thumb">
+                                        <div class="d-inline-block">
                                             <img
                                                 src="{% url 'photo_image_scaled' photo.id 120 %}"
                                                 alt="Thumbnail for {{ photo.item.name }}"
-                                                class="rounded border"
-                                                style="width: 56px; height: 56px; object-fit: cover;"
+                                                class="pv-thumb border"
                                             />
                                         </div>
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                        <p class="small text-muted mb-0">
+                        <p class="small pv-subtle mb-0">
                             Last item update:
                             {% if collection.last_item_updated_at %}
                                 {{ collection.last_item_updated_at|date:"Y-m-d" }}
@@ -87,16 +61,16 @@
     </div>
 {% endif %}
 
-<div class="d-flex align-items-center gap-2 mb-2">
+<div class="pv-section-head">
     <h2 class="h6 mb-0">Public Collections</h2>
     <span class="badge bg-secondary">{{ public_collections|length }}</span>
 </div>
 <div class="row g-3">
     {% for collection in public_collections %}
         <div class="col-12 col-md-6 col-lg-4">
-            <div class="card h-100 collection-card">
+            <div class="card h-100 pv-collection-card">
                 <a
-                    class="collection-card-link"
+                    class="pv-collection-link"
                     href="{% url 'items' collection.id %}"
                     aria-label="View {{ collection.name }} collection"
                 >
@@ -107,22 +81,21 @@
                         <h3 class="h5 fw-semibold mb-1">{{ collection.name }}</h3>
                         <span class="badge bg-secondary">{{ collection.item_count }} items</span>
                     </div>
-                    <p class="text-muted mb-2">Owner: {{ collection.owner_code }}</p>
+                    <p class="pv-subtle mb-2">Owner: {{ collection.owner_code }}</p>
                     {% if collection.thumbnail_photos %}
                         <div class="d-flex flex-wrap gap-2 mb-2">
                             {% for photo in collection.thumbnail_photos %}
-                                <div class="d-inline-block collection-card-thumb">
+                                <div class="d-inline-block">
                                     <img
                                         src="{% url 'photo_image_scaled' photo.id 120 %}"
                                         alt="Thumbnail for {{ photo.item.name }}"
-                                        class="rounded border"
-                                        style="width: 56px; height: 56px; object-fit: cover;"
+                                        class="pv-thumb border"
                                     />
                                 </div>
                             {% endfor %}
                         </div>
                     {% endif %}
-                    <p class="small text-muted mb-0">
+                    <p class="small pv-subtle mb-0">
                         Last item update:
                         {% if collection.last_item_updated_at %}
                             {{ collection.last_item_updated_at|date:"Y-m-d" }}

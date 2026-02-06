@@ -1,16 +1,7 @@
 {% extends "partvault/base.html" %}
 
 {% block content %}
-<style>
-    .clickable-row {
-        cursor: pointer;
-    }
-
-    .clickable-row:hover {
-        background-color: #e9f2ff;
-    }
-</style>
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
     <div class="d-flex align-items-center gap-3">
         <h1 class="h3 mb-0">
             <a class="text-decoration-none" href="{% url 'items' collection.id %}">
@@ -28,9 +19,9 @@
         {% endif %}
     </div>
 </div>
-<div class="table-responsive">
+<div class="table-responsive pv-table-wrap">
     <table class="table table-hover align-middle">
-        <thead class="table-light">
+        <thead>
             <tr>
                 <th scope="col">Photo</th>
                 <th scope="col">Asset tag</th>
@@ -45,16 +36,15 @@
         </thead>
         <tbody>
             {% for item in item_list %}
-                <tr class="clickable-row" data-href="{% url 'item' item.id %}">
-                    <td>
+                <tr class="pv-clickable-row" data-href="{% url 'item' item.id %}">
+                    <td data-label="Photo" class="pv-cell-photo">
                         {% with photo=item.ordered_photos.0 %}
                             {% if photo %}
                                 <a href="{% url 'item' item.id %}" class="d-inline-block">
                                     <img
                                         src="{% url 'photo_image_scaled' photo.id 120 %}"
                                         alt="Thumbnail for {{ item.name }}"
-                                        class="rounded border"
-                                        style="width: 56px; height: 56px; object-fit: cover;"
+                                        class="pv-thumb border"
                                     />
                                 </a>
                             {% else %}
@@ -67,13 +57,31 @@
                             {% endif %}
                         {% endwith %}
                     </td>
-                    <td>
+                    <td data-label="Asset tag">
+                        <span class="pv-mobile-asset-media" aria-hidden="true">
+                            {% with photo=item.ordered_photos.0 %}
+                                {% if photo %}
+                                    <img
+                                        src="{% url 'photo_image_scaled' photo.id 120 %}"
+                                        alt=""
+                                        class="pv-thumb border"
+                                    />
+                                {% else %}
+                                    <span
+                                        class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
+                                        style="width: 56px; height: 56px;"
+                                    >
+                                        -
+                                    </span>
+                                {% endif %}
+                            {% endwith %}
+                        </span>
                         <a class="text-decoration-none" href="{% url 'item' item.id %}">
                             {{ item.asset_tag|default:"-" }}
                         </a>
                     </td>
-                    <td>{{ item.name }}</td>
-                    <td>
+                    <td data-label="Name">{{ item.name }}</td>
+                    <td data-label="Category">
                         {% if item.category %}
                             <a
                                 class="text-decoration-none"
@@ -85,7 +93,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td>
+                    <td data-label="Manufacturer">
                         {% if item.manufacturer %}
                             <a
                                 class="text-decoration-none"
@@ -97,21 +105,21 @@
                             -
                         {% endif %}
                     </td>
-                    <td>{{ item.model|default:"-" }}</td>
-                    <td>{{ item.release_date|date:"Y-m"|default:"-" }}</td>
-                    <td>
+                    <td data-label="Model">{{ item.model|default:"-" }}</td>
+                    <td data-label="Release date">{{ item.release_date|date:"Y-m"|default:"-" }}</td>
+                    <td data-label="Tags">
                         {% for tag in item.tags.all %}
                             <a
                                 class="text-decoration-none"
                                 href="{% url 'items' collection.id %}?tag={{ tag.id }}"
                             >
-                                <span class="badge bg-secondary me-1">{{ tag }}</span>
+                                <span class="badge pv-tag me-1">{{ tag }}</span>
                             </a>
                         {% empty %}
                             <span class="text-muted">-</span>
                         {% endfor %}
                     </td>
-                    <td>
+                    <td data-label="Status">
                         {% if item.status %}
                             {% with status_color=item.status.color %}
                                 <span class="badge {{ status_color }}{% if status_color == "bg-light" or status_color == "bg-warning" or status_color == "bg-info" %} text-dark{% else %} text-light{% endif %}">
@@ -125,25 +133,10 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="9" class="text-muted">No items found.</td>
+                    <td colspan="9" class="text-muted pv-table-empty">No items found.</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll(".clickable-row").forEach((row) => {
-            row.addEventListener("click", (event) => {
-                if (event.target.closest("a")) {
-                    return;
-                }
-                const href = row.getAttribute("data-href");
-                if (href) {
-                    window.location.href = href;
-                }
-            });
-        });
-    });
-</script>
 {% endblock %}

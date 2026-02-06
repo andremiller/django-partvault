@@ -1,4 +1,4 @@
-{% load django_bootstrap5 %}
+{% load django_bootstrap5 static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,11 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}PartVault{% endblock %}</title>
     {% block meta %}{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     {% bootstrap_css %}
+    <link rel="stylesheet" href="{% static 'partvault/theme.css' %}">
 </head>
 
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<body class="pv-app">
+    <nav class="navbar navbar-expand-lg navbar-dark pv-navbar">
         <div class="container">
             <a class="navbar-brand" href="{% url 'index' %}">PartVault</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,25 +42,25 @@
                 </ul>
                 <span class="navbar-text ms-lg-3">
                     {% if user.is_authenticated %}
-                        <a class="text-decoration-none" href="{% url 'profile' %}">
+                        <a class="pv-user-link" href="{% url 'profile' %}">
                             {{ user.get_full_name|default:user.get_username }} [{{ user.profile.user_code }}]
                         </a>
                     {% else %}
-                        <a class="text-decoration-none" href="{% url 'login' %}">Login</a>
+                        <a class="pv-user-link" href="{% url 'login' %}">Login</a>
                     {% endif %}
                 </span>
             </div>
         </div>
     </nav>
-    <main class="container py-4">
+    <main class="container py-4 py-lg-5 pv-main">
         {% if messages %}
             {% for message in messages %}
                 {% if "error" in message.tags %}
-                    <div class="alert alert-danger" role="alert">
+                    <div class="alert alert-danger pv-alert" role="alert">
                         {{ message }}
                     </div>
                 {% else %}
-                    <div class="alert alert-{{ message.tags|default:"info" }}" role="alert">
+                    <div class="alert alert-{{ message.tags|default:"info" }} pv-alert" role="alert">
                         {{ message }}
                     </div>
                 {% endif %}
@@ -64,12 +68,13 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
-    <footer class="border-top py-3">
+    <footer class="py-3 pv-footer">
         <div class="container text-muted small d-flex flex-column flex-md-row justify-content-between gap-2">
             <span>Licensed under the GNU GPL v3.0.</span>
             <a class="text-decoration-none" href="https://github.com/andremiller/django-partvault" target="_blank" rel="noopener noreferrer">github.com/andremiller/django-partvault</a>
         </div>
     </footer>
     {% bootstrap_javascript %}
+    <script src="{% static 'partvault/app.js' %}"></script>
 </body>
 </html>

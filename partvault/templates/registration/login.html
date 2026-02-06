@@ -4,7 +4,7 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-sm-10 col-md-7 col-lg-5">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm pv-auth-card">
             <div class="card-body">
                 <h1 class="h4 mb-3">Sign in</h1>
                 <form method="post">
@@ -15,7 +15,7 @@
                     {% endif %}
                     <button class="btn btn-primary w-100" type="submit">Sign in</button>
                 </form>
-                <p class="text-muted mt-3 mb-0">
+                <p class="pv-subtle mt-3 mb-0">
                     Need an account?
                     <a href="{% url 'signup' %}">Sign up</a>
                 </p>

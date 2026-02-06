@@ -4,8 +4,8 @@
 {% if user.is_authenticated %}
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h1 class="h3 mb-1">User profile</h1>
-            <p class="text-muted mb-0">Account overview and contact details.</p>
+            <h1 class="h3 mb-1 pv-page-title">User profile</h1>
+            <p class="pv-subtle mb-0">Account overview and contact details.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <a class="btn btn-sm btn-outline-primary" href="{% url 'profile_edit' %}">Edit profile</a>
@@ -19,7 +19,7 @@
 
     <div class="card">
         <div class="card-header">Profile details</div>
-        <ul class="list-group list-group-flush">
+        <ul class="list-group list-group-flush pv-detail-list">
             <li class="list-group-item d-flex justify-content-between">
                 <span class="text-muted">Username</span>
                 <span>{{ user.get_username|default:"-" }}</span>
@@ -30,7 +30,7 @@
             </li>
             <li class="list-group-item d-flex justify-content-between">
                 <span class="text-muted">User code</span>
-                <span>{{ profile.user_code|default:"-" }}</span>
+                <span class="pv-code">{{ profile.user_code|default:"-" }}</span>
             </li>
             <li class="list-group-item d-flex justify-content-between">
                 <span class="text-muted">Email</span>
@@ -61,7 +61,7 @@
             <ul class="list-group list-group-flush">
                 {% for asset_tag in reserved_asset_tags %}
                     <li class="list-group-item">
-                        <span>{{ asset_tag.label }}</span>
+                        <span class="pv-code">{{ asset_tag.label }}</span>
                         {% if asset_tag.count > 1 %}
                             <span class="text-muted">({{ asset_tag.count }})</span>
                         {% endif %}

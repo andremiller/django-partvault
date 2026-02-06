@@ -15,12 +15,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
     <div>
-        <h1 class="h3 mb-1">{{ item.name }}</h1>
-        <p class="text-muted mb-0">{{ item.asset_tag }}</p>
+        <h1 class="h3 mb-1 pv-page-title">{{ item.name }}</h1>
+        <p class="pv-subtle mb-0 pv-code">{{ item.asset_tag }}</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 pv-page-actions">
         {% if request.user.is_authenticated %}
             <a class="btn btn-sm btn-primary" href="{% url 'item_create' %}">New item</a>
         {% endif %}
@@ -38,68 +38,68 @@
         {% endif %}
     </div>
 </div>
-<div class="card">
+
+<div class="card pv-detail-wrap">
     <div class="card-header">Item details</div>
-    <ul class="list-group list-group-flush">
+    <ul class="list-group list-group-flush pv-detail-list pv-detail-spec-list">
         <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Collection</span>
-            <a class="text-decoration-none" href="{% url 'items' item.collection.id %}">
-                {{ item.collection }}
-            </a>
+            <span class="pv-detail-label">Collection</span>
+            <a class="text-decoration-none pv-detail-value" href="{% url 'items' item.collection.id %}">{{ item.collection }}</a>
         </li>
         {% if item.category %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Category</span>
-                <span>{{ item.category }}</span>
+                <span class="pv-detail-label">Category</span>
+                <span class="pv-detail-value">{{ item.category }}</span>
             </li>
         {% endif %}
         {% if item.manufacturer %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Manufacturer</span>
-                <span>{{ item.manufacturer }}</span>
+                <span class="pv-detail-label">Manufacturer</span>
+                <span class="pv-detail-value">{{ item.manufacturer }}</span>
             </li>
         {% endif %}
         {% if item.model %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Model</span>
-                <span>{{ item.model }}</span>
+                <span class="pv-detail-label">Model</span>
+                <span class="pv-detail-value">{{ item.model }}</span>
             </li>
         {% endif %}
         {% if item.tags.exists %}
-            <li class="list-group-item">
-                <span class="text-muted d-block mb-2">Tags</span>
+            <li class="list-group-item pv-detail-block">
+                <span class="pv-detail-label d-block mb-2">Tags</span>
                 {% for tag in item.tags.all %}
-                    <span class="badge bg-secondary me-1">{{ tag }}</span>
+                    <span class="badge pv-tag me-1">{{ tag }}</span>
                 {% endfor %}
             </li>
         {% endif %}
         {% if item.revision %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Revision</span>
-                <span>{{ item.revision }}</span>
+                <span class="pv-detail-label">Revision</span>
+                <span class="pv-detail-value">{{ item.revision }}</span>
             </li>
         {% endif %}
         {% if item.serial %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Serial</span>
-                <span>{{ item.serial }}</span>
+                <span class="pv-detail-label">Serial</span>
+                <span class="pv-detail-value pv-code">{{ item.serial }}</span>
             </li>
         {% endif %}
         {% if item.release_date %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Release date</span>
-                <span>{{ item.release_date|date:"Y-m" }}</span>
+                <span class="pv-detail-label">Release date</span>
+                <span class="pv-detail-value">{{ item.release_date|date:"Y-m" }}</span>
             </li>
         {% endif %}
         {% if item.location %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Location</span>
-                <span>{{ item.location }}</span>
+                <span class="pv-detail-label">Location</span>
+                <span class="pv-detail-value">{{ item.location }}</span>
             </li>
         {% endif %}
+
         {% if item.parent_item %}
-            <li class="list-group-item">
-                <span class="text-muted d-block mb-2">Parent item</span>
+            <li class="list-group-item pv-detail-block">
+                <span class="pv-detail-label d-block mb-2">Parent item</span>
                 <a class="text-decoration-none" href="{% url 'item' item.parent_item.id %}">
                     <div class="d-flex align-items-center gap-3">
                         {% with photo=item.parent_item.ordered_photos.0 %}
@@ -107,25 +107,24 @@
                                 <img
                                     src="{% url 'photo_image_scaled' photo.id 120 %}"
                                     alt="Thumbnail for {{ item.parent_item.name }}"
-                                    class="rounded border"
-                                    style="width: 56px; height: 56px; object-fit: cover;"
+                                    class="pv-thumb border"
                                 />
                             {% else %}
                                 <div
                                     class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
                                     style="width: 56px; height: 56px;"
                                 >
-                                    —
+                                    -
                                 </div>
                             {% endif %}
                         {% endwith %}
                         <div>
                             <div class="fw-semibold text-dark">{{ item.parent_item.name }}</div>
-                            <div class="text-muted">
+                            <div class="pv-subtle">
                                 {{ item.parent_item.category|default:"-" }}
                                 {% if item.parent_item.tags.exists %}
                                     {% for tag in item.parent_item.tags.all %}
-                                        <span class="badge bg-secondary ms-1">{{ tag }}</span>
+                                        <span class="badge pv-tag ms-1">{{ tag }}</span>
                                     {% endfor %}
                                 {% endif %}
                             </div>
@@ -134,10 +133,11 @@
                 </a>
             </li>
         {% endif %}
+
         {% with photos=item.photo_set.all %}
             {% if photos %}
-                <li class="list-group-item">
-                    <span class="text-muted d-block mb-2">Photos</span>
+                <li class="list-group-item pv-detail-block">
+                    <span class="pv-detail-label d-block mb-2">Photos</span>
                     <div class="row g-2">
                         {% for photo in photos %}
                             <div class="col-6 col-md-4">
@@ -154,10 +154,11 @@
                 </li>
             {% endif %}
         {% endwith %}
+
         {% with children=item.ordered_children %}
             {% if children %}
-                <li class="list-group-item">
-                    <span class="text-muted d-block mb-2">Child items</span>
+                <li class="list-group-item pv-detail-block">
+                    <span class="pv-detail-label d-block mb-2">Child items</span>
                     <div class="d-flex flex-column gap-2">
                         {% for child in children %}
                             <div class="d-flex flex-column gap-2">
@@ -168,25 +169,24 @@
                                                 <img
                                                     src="{% url 'photo_image_scaled' photo.id 120 %}"
                                                     alt="Thumbnail for {{ child.name }}"
-                                                    class="rounded border"
-                                                    style="width: 56px; height: 56px; object-fit: cover;"
+                                                    class="pv-thumb border"
                                                 />
                                             {% else %}
                                                 <div
                                                     class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
                                                     style="width: 56px; height: 56px;"
                                                 >
-                                                    —
+                                                    -
                                                 </div>
                                             {% endif %}
                                         {% endwith %}
                                         <div>
                                             <div class="fw-semibold text-dark">{{ child.name }}</div>
-                                            <div class="text-muted">
+                                            <div class="pv-subtle">
                                                 {{ child.category|default:"-" }}
                                                 {% if child.tags.exists %}
                                                     {% for tag in child.tags.all %}
-                                                        <span class="badge bg-secondary ms-1">{{ tag }}</span>
+                                                        <span class="badge pv-tag ms-1">{{ tag }}</span>
                                                     {% endfor %}
                                                 {% endif %}
                                             </div>
@@ -204,25 +204,24 @@
                                                                 <img
                                                                     src="{% url 'photo_image_scaled' photo.id 120 %}"
                                                                     alt="Thumbnail for {{ grandchild.name }}"
-                                                                    class="rounded border"
-                                                                    style="width: 56px; height: 56px; object-fit: cover;"
+                                                                    class="pv-thumb border"
                                                                 />
                                                             {% else %}
                                                                 <div
                                                                     class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
                                                                     style="width: 56px; height: 56px;"
                                                                 >
-                                                                    —
+                                                                    -
                                                                 </div>
                                                             {% endif %}
                                                         {% endwith %}
                                                         <div>
                                                             <div class="fw-semibold text-dark">{{ grandchild.name }}</div>
-                                                            <div class="text-muted">
+                                                            <div class="pv-subtle">
                                                                 {{ grandchild.category|default:"-" }}
                                                                 {% if grandchild.tags.exists %}
                                                                     {% for tag in grandchild.tags.all %}
-                                                                        <span class="badge bg-secondary ms-1">{{ tag }}</span>
+                                                                        <span class="badge pv-tag ms-1">{{ tag }}</span>
                                                                     {% endfor %}
                                                                 {% endif %}
                                                             </div>
@@ -239,69 +238,65 @@
                 </li>
             {% endif %}
         {% endwith %}
+
         {% if item.notes %}
-            <li class="list-group-item">
-                <span class="text-muted d-block mb-2">Notes</span>
-                <span>{{ item.notes }}</span>
+            <li class="list-group-item pv-detail-block">
+                <span class="pv-detail-label d-block mb-2">Notes</span>
+                <span class="pv-detail-value">{{ item.notes }}</span>
             </li>
         {% endif %}
+
         {% with documents=item.document_set.all %}
             {% if documents %}
-                <li class="list-group-item">
-                    <span class="text-muted d-block mb-2">Documents</span>
+                <li class="list-group-item pv-detail-block">
+                    <span class="pv-detail-label d-block mb-2">Documents</span>
                     <ul class="list-unstyled mb-0">
                         {% for document in documents %}
                             <li>
-                                <span class="text-muted">
-                                    {{ document.document_type|default:"Document" }}:
-                                </span>
-                                <a href="{{ document.file.url }}" target="_blank" rel="noopener">
-                                    {{ document.file.name }}
-                                </a>
+                                <span class="pv-subtle">{{ document.document_type|default:"Document" }}:</span>
+                                <a href="{{ document.file.url }}" target="_blank" rel="noopener">{{ document.file.name }}</a>
                             </li>
                         {% endfor %}
                     </ul>
                 </li>
             {% endif %}
         {% endwith %}
+
         {% with links=item.link_set.all %}
             {% if links %}
-                <li class="list-group-item">
-                    <span class="text-muted d-block mb-2">Links</span>
+                <li class="list-group-item pv-detail-block">
+                    <span class="pv-detail-label d-block mb-2">Links</span>
                     <ul class="list-unstyled mb-0">
                         {% for link in links %}
                             <li>
-                                <span class="text-muted">
-                                    {{ link.link_type|default:"Link" }}:
-                                </span>
-                                <a href="{{ link.url }}" target="_blank" rel="noopener">
-                                    {{ link.url }}
-                                </a>
+                                <span class="pv-subtle">{{ link.link_type|default:"Link" }}:</span>
+                                <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.url }}</a>
                             </li>
                         {% endfor %}
                     </ul>
                 </li>
             {% endif %}
         {% endwith %}
+
         {% if item.acquired_on %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Acquired at</span>
-                <span>{{ item.acquired_on }}</span>
+                <span class="pv-detail-label">Acquired at</span>
+                <span class="pv-detail-value">{{ item.acquired_on }}</span>
             </li>
         {% endif %}
         {% if item.last_tested_on %}
             <li class="list-group-item d-flex justify-content-between">
-                <span class="text-muted">Last tested at</span>
-                <span>{{ item.last_tested_on }}</span>
+                <span class="pv-detail-label">Last tested at</span>
+                <span class="pv-detail-value">{{ item.last_tested_on }}</span>
             </li>
         {% endif %}
         <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Created at</span>
-            <span>{{ item.created_at }}</span>
+            <span class="pv-detail-label">Created at</span>
+            <span class="pv-detail-value">{{ item.created_at }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">Updated at</span>
-            <span>{{ item.updated_at }}</span>
+            <span class="pv-detail-label">Updated at</span>
+            <span class="pv-detail-value">{{ item.updated_at }}</span>
         </li>
     </ul>
 </div>

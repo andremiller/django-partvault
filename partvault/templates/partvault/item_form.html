@@ -4,97 +4,107 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-sm-10 col-md-8 col-lg-6">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm pv-form-card">
             <div class="card-body">
-                <h1 class="h4 mb-3">{% if is_edit %}Edit item{% else %}New item{% endif %}</h1>
+                <h1 class="h4 mb-1 pv-page-title">{% if is_edit %}Edit item{% else %}New item{% endif %}</h1>
+                <p class="pv-subtle mb-3">Use structured fields to keep your catalog searchable and consistent.</p>
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    {% bootstrap_field form.collection %}
-                    {% bootstrap_field form.name %}
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            {% bootstrap_field form.category %}
+                    <section class="pv-form-section mb-3">
+                        <h2 class="h6 pv-form-section-title">Core details</h2>
+                        {% bootstrap_field form.collection %}
+                        {% bootstrap_field form.name %}
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                {% bootstrap_field form.category %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Custom category</label>
+                                {{ category_formset.management_form }}
+                                {% for related_form in category_formset %}
+                                    {% bootstrap_field related_form.name show_label=False placeholder="Category name" %}
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Custom Category</label>
-                            {{ category_formset.management_form }}
-                            {% for related_form in category_formset %}
-                                {% bootstrap_field related_form.name show_label=False placeholder="Category name" %}
-                            {% endfor %}
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                {% bootstrap_field form.manufacturer %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Custom manufacturer</label>
+                                {{ manufacturer_formset.management_form }}
+                                {% for related_form in manufacturer_formset %}
+                                    {% bootstrap_field related_form.name show_label=False placeholder="Manufacturer name" %}
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            {% bootstrap_field form.manufacturer %}
+                        {% bootstrap_field form.model %}
+                        {% bootstrap_field form.revision %}
+                        {% bootstrap_field form.serial %}
+                        {% bootstrap_field form.release_date %}
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                {% bootstrap_field form.status %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Custom status</label>
+                                {{ status_formset.management_form }}
+                                {% for related_form in status_formset %}
+                                    {% bootstrap_field related_form.name show_label=False placeholder="Status name" %}
+                                    {% bootstrap_field related_form.color show_label=False %}
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Custom Manufacter</label>
-                            {{ manufacturer_formset.management_form }}
-                            {% for related_form in manufacturer_formset %}
-                                {% bootstrap_field related_form.name show_label=False placeholder="Manufacturer name" %}
-                            {% endfor %}
+                    </section>
+
+                    <section class="pv-form-section mb-3">
+                        <h2 class="h6 pv-form-section-title">Placement and tags</h2>
+                        {% bootstrap_field form.location %}
+                        {% bootstrap_field form.parent_item %}
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                {% bootstrap_field form.tags %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Custom tags</label>
+                                {{ tag_formset.management_form }}
+                                {% for related_form in tag_formset %}
+                                    {% bootstrap_field related_form.name show_label=False placeholder="Tag name" %}
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-                    {% bootstrap_field form.model %}
-                    {% bootstrap_field form.revision %}
-                    {% bootstrap_field form.serial %}
-                    {% bootstrap_field form.release_date %}
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            {% bootstrap_field form.status %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Custom Status</label>
-                            {{ status_formset.management_form }}
-                            {% for related_form in status_formset %}
-                                {% bootstrap_field related_form.name show_label=False placeholder="Status name" %}
-                                {% bootstrap_field related_form.color show_label=False %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% bootstrap_field form.location %}
-                    {% bootstrap_field form.parent_item %}
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            {% bootstrap_field form.tags %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Custom Tags</label>
-                            {{ tag_formset.management_form }}
-                            {% for related_form in tag_formset %}
-                                {% bootstrap_field related_form.name show_label=False placeholder="Tag name" %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <h2 class="h6">Photos</h2>
+                    </section>
+
+                    <section class="pv-form-section mb-3">
+                        <h2 class="h6 pv-form-section-title">Photos</h2>
                         {{ photo_formset.non_form_errors }}
                         {{ photo_formset.management_form }}
                         {% for related_form in photo_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-8">
                                     {% bootstrap_field related_form.image show_label=False %}
                                 </div>
                                 <div class="col-md-3">
-                                    {% bootstrap_field related_form.is_thumbnail %}
+                                    {% bootstrap_field related_form.is_thumbnail show_help=False %}
                                 </div>
                                 <div class="col-md-1">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        <h2 class="h6">Documents</h2>
+                    </section>
+
+                    <section class="pv-form-section mb-3">
+                        <h2 class="h6 pv-form-section-title">Documents</h2>
                         {{ document_formset.non_form_errors }}
                         {{ document_formset.management_form }}
                         {% for related_form in document_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-3">
                                     {% bootstrap_field related_form.document_type show_label=False %}
                                 </div>
@@ -106,20 +116,21 @@
                                 </div>
                                 <div class="col-md-1">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        <h2 class="h6">Links</h2>
+                    </section>
+
+                    <section class="pv-form-section mb-3">
+                        <h2 class="h6 pv-form-section-title">Links</h2>
                         {{ link_formset.non_form_errors }}
                         {{ link_formset.management_form }}
                         {% for related_form in link_formset %}
                             {{ related_form.id }}
-                            <div class="row g-2 align-items-end mb-2">
+                            <div class="row g-2 align-items-end mb-2 pv-inline-form-row">
                                 <div class="col-md-3">
                                     {% bootstrap_field related_form.link_type show_label=False %}
                                 </div>
@@ -131,23 +142,28 @@
                                 </div>
                                 <div class="col-md-1">
                                     {% if related_form.instance.pk %}
-                                        <label class="form-label d-block">Delete</label>
+                                        <label class="form-label d-block">Del?</label>
                                         {% bootstrap_field related_form.DELETE show_label=False %}
                                     {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
-                    </div>
-                    {% bootstrap_field form.notes %}
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            {% bootstrap_field form.acquired_on %}
+                    </section>
+
+                    <section class="pv-form-section mb-4">
+                        <h2 class="h6 pv-form-section-title">Notes and timeline</h2>
+                        {% bootstrap_field form.notes %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {% bootstrap_field form.acquired_on %}
+                            </div>
+                            <div class="col-md-6">
+                                {% bootstrap_field form.last_tested_on %}
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            {% bootstrap_field form.last_tested_on %}
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
+                    </section>
+
+                    <div class="d-flex gap-2 flex-wrap pv-form-actions">
                         <button class="btn btn-primary" type="submit">
                             {% if is_edit %}Save changes{% else %}Create item{% endif %}
                         </button>

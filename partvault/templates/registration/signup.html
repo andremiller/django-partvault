@@ -4,7 +4,7 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-sm-10 col-md-8 col-lg-6">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm pv-auth-card">
             <div class="card-body">
                 <h1 class="h4 mb-3">Create account</h1>
                 <form method="post">
@@ -12,7 +12,7 @@
                     {% bootstrap_form form %}
                     <button class="btn btn-primary w-100" type="submit">Sign up</button>
                 </form>
-                <p class="text-muted mt-3 mb-0">
+                <p class="pv-subtle mt-3 mb-0">
                     Already have an account?
                     <a href="{% url 'login' %}">Sign in</a>
                 </p>

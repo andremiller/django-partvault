@@ -223,6 +223,9 @@ class PhotoForm(forms.ModelForm):
     class Meta:
         model = Photo
         fields = ["image", "is_thumbnail"]
+        labels = {
+            "is_thumbnail": "Thumb",
+        }
         widgets = {
             "image": forms.ClearableFileInput(
                 attrs={"accept": "image/*", "capture": "environment"}
