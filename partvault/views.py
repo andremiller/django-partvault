@@ -1,4 +1,3 @@
-from collections import defaultdict
 from io import BytesIO
 from mimetypes import guess_type
 
@@ -45,29 +44,20 @@ from .forms import (
 )
 
 
-def _attach_collection_thumbnails(collections):
+def _attach_collection_preview_photos(collections):
     collection_list = list(collections)
     if not collection_list:
         return collection_list
 
-    collection_ids = [collection.id for collection in collection_list]
-    thumbnails = (
-        Photo.objects.filter(
-            is_thumbnail=True,
-            item__collection_id__in=collection_ids,
-        )
-        .select_related("item")
-        .order_by("-uploaded_at")
-    )
-    photos_by_collection = defaultdict(list)
-    for photo in thumbnails:
-        photos = photos_by_collection[photo.item.collection_id]
-        if len(photos) >= 4:
-            continue
-        photos.append(photo)
-
     for collection in collection_list:
-        collection.thumbnail_photos = photos_by_collection.get(collection.id, [])
+        preview_photos = []
+        for item in collection.items_with_ordered_photos:
+            if not item.ordered_photos:
+                continue
+            preview_photos.append(item.ordered_photos[0])
+            if len(preview_photos) >= 4:
+                break
+        collection.thumbnail_photos = preview_photos
 
     return collection_list
 
@@ -146,11 +136,25 @@ def photo_image(request, photo_id, long_edge=None):
 
 
 def index(request):
+    photo_prefetch = Prefetch(
+        "photo_set",
+        queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+        to_attr="ordered_photos",
+    )
+    item_prefetch = Prefetch(
+        "item_set",
+        queryset=Item.objects.prefetch_related(photo_prefetch).order_by("-updated_at"),
+        to_attr="items_with_ordered_photos",
+    )
     my_collections = Collection.objects.none()
     if request.user.is_authenticated:
-        my_collections = Collection.objects.filter(owner=request.user).annotate(
-            last_item_updated_at=Max("item__updated_at"),
-            item_count=Count("item", distinct=True),
+        my_collections = (
+            Collection.objects.filter(owner=request.user)
+            .annotate(
+                last_item_updated_at=Max("item__updated_at"),
+                item_count=Count("item", distinct=True),
+            )
+            .prefetch_related(item_prefetch)
         )
         public_collections = (
             Collection.objects.filter(is_public=True)
@@ -159,14 +163,19 @@ def index(request):
                 last_item_updated_at=Max("item__updated_at"),
                 item_count=Count("item", distinct=True),
             )
+            .filter(item_count__gt=0)
+            .prefetch_related(item_prefetch)
         )
     else:
         public_collections = Collection.objects.filter(is_public=True).annotate(
             last_item_updated_at=Max("item__updated_at"),
             item_count=Count("item", distinct=True),
         )
-    my_collections = _attach_collection_thumbnails(my_collections)
-    public_collections = _attach_collection_thumbnails(public_collections)
+        public_collections = public_collections.filter(
+            item_count__gt=0,
+        ).prefetch_related(item_prefetch)
+    my_collections = _attach_collection_preview_photos(my_collections)
+    public_collections = _attach_collection_preview_photos(public_collections)
     context = {
         "my_collections": my_collections,
         "public_collections": public_collections,
