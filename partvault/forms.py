@@ -240,6 +240,28 @@ class DocumentForm(forms.ModelForm):
         model = Document
         fields = ["document_type", "file"]
 
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            user_filter = Q(user=user) | Q(user__isnull=True)
+            self.fields["document_type"].queryset = self.fields[
+                "document_type"
+            ].queryset.filter(user_filter)
+            user_id = user.id
+
+            def label_with_custom_marker(obj):
+                if obj.user_id == user_id:
+                    return f"🖋️ {obj}"
+                if obj.user_id is None:
+                    return f"🌐 {obj}"
+                return str(obj)
+
+            self.fields["document_type"].label_from_instance = label_with_custom_marker
+        else:
+            self.fields["document_type"].queryset = self.fields[
+                "document_type"
+            ].queryset.none()
+
     def clean_new_document_type(self):
         return self.cleaned_data["new_document_type"].strip()
 
@@ -250,6 +272,26 @@ class LinkForm(forms.ModelForm):
     class Meta:
         model = Link
         fields = ["link_type", "url"]
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            user_filter = Q(user=user) | Q(user__isnull=True)
+            self.fields["link_type"].queryset = self.fields["link_type"].queryset.filter(
+                user_filter
+            )
+            user_id = user.id
+
+            def label_with_custom_marker(obj):
+                if obj.user_id == user_id:
+                    return f"🖋️ {obj}"
+                if obj.user_id is None:
+                    return f"🌐 {obj}"
+                return str(obj)
+
+            self.fields["link_type"].label_from_instance = label_with_custom_marker
+        else:
+            self.fields["link_type"].queryset = self.fields["link_type"].queryset.none()
 
     def clean_new_link_type(self):
         return self.cleaned_data["new_link_type"].strip()

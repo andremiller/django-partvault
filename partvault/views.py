@@ -20,7 +20,6 @@ from .models import (
     Category,
     Collection,
     Document,
-    DocumentType,
     Item,
     Link,
     LinkType,
@@ -374,7 +373,7 @@ def _save_user_inline_objects(formset, model, user):
     return created
 
 
-def _build_related_formsets(item=None, post_data=None, files=None):
+def _build_related_formsets(item=None, post_data=None, files=None, user=None):
     if item is None:
         item = Item()
     PhotoFormSet = inlineformset_factory(
@@ -389,9 +388,19 @@ def _build_related_formsets(item=None, post_data=None, files=None):
     return {
         "photo_formset": PhotoFormSet(post_data, files, instance=item, prefix="photo"),
         "document_formset": DocumentFormSet(
-            post_data, files, instance=item, prefix="document"
+            post_data,
+            files,
+            instance=item,
+            prefix="document",
+            form_kwargs={"user": user},
         ),
-        "link_formset": LinkFormSet(post_data, files, instance=item, prefix="link"),
+        "link_formset": LinkFormSet(
+            post_data,
+            files,
+            instance=item,
+            prefix="link",
+            form_kwargs={"user": user},
+        ),
     }
 
 
@@ -439,16 +448,14 @@ def _save_user_formset(formset, user):
         instance.delete()
 
 
-def _save_document_formset(formset, collection):
+def _save_document_formset(formset, user):
     instances = formset.save(commit=False)
     for form in formset:
         if not form.cleaned_data or form.cleaned_data.get("DELETE"):
             continue
         new_type = form.cleaned_data.get("new_document_type")
         if new_type:
-            document_type, _ = DocumentType.objects.get_or_create(
-                collection=collection, name=new_type
-            )
+            document_type, _ = LinkType.objects.get_or_create(user=user, name=new_type)
             form.instance.document_type = document_type
 
     for instance in instances:
@@ -458,7 +465,7 @@ def _save_document_formset(formset, collection):
         instance.delete()
 
 
-def _save_link_formset(formset, collection):
+def _save_link_formset(formset, user):
     instances = formset.save(commit=False)
     for form in formset:
         if not form.cleaned_data or form.cleaned_data.get("DELETE"):
@@ -466,7 +473,7 @@ def _save_link_formset(formset, collection):
         new_type = form.cleaned_data.get("new_link_type")
         if new_type:
             link_type, _ = LinkType.objects.get_or_create(
-                collection=collection, name=new_type
+                user=user, name=new_type
             )
             form.instance.link_type = link_type
 
@@ -485,6 +492,7 @@ def item_create(request):
     related_formsets = _build_related_formsets(
         post_data=request.POST if request.method == "POST" else None,
         files=request.FILES if request.method == "POST" else None,
+        user=request.user,
     )
     if request.method == "POST":
         form = ItemForm(request.POST, user=request.user)
@@ -501,9 +509,9 @@ def item_create(request):
                 related_formsets["photo_formset"].instance = item
                 related_formsets["photo_formset"].save()
                 related_formsets["document_formset"].instance = item
-                _save_document_formset(related_formsets["document_formset"], collection)
+                _save_document_formset(related_formsets["document_formset"], request.user)
                 related_formsets["link_formset"].instance = item
-                _save_link_formset(related_formsets["link_formset"], collection)
+                _save_link_formset(related_formsets["link_formset"], request.user)
                 new_categories = _save_user_inline_objects(
                     formsets["category_formset"], Category, collection.owner
                 )
@@ -554,6 +562,7 @@ def item_edit(request, item_id):
         item=item,
         post_data=request.POST if request.method == "POST" else None,
         files=request.FILES if request.method == "POST" else None,
+        user=request.user,
     )
     if request.method == "POST":
         form = ItemForm(request.POST, instance=item, user=request.user)
@@ -568,8 +577,8 @@ def item_edit(request, item_id):
                 item.save()
                 form.save_m2m()
                 related_formsets["photo_formset"].save()
-                _save_document_formset(related_formsets["document_formset"], collection)
-                _save_link_formset(related_formsets["link_formset"], collection)
+                _save_document_formset(related_formsets["document_formset"], request.user)
+                _save_link_formset(related_formsets["link_formset"], request.user)
                 new_categories = _save_user_inline_objects(
                     formsets["category_formset"], Category, collection.owner
                 )

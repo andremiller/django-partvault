@@ -202,18 +202,10 @@ def upload_path_photo(instance, filename):
     return f"{path_base}/{filename}"
 
 
-class DocumentType(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    name = models.CharField(max_length=120)
-
-    def __str__(self) -> str:
-        return self.name
-
-
 class Document(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     document_type = models.ForeignKey(
-        DocumentType, on_delete=models.SET_NULL, null=True, blank=True
+        "LinkType", on_delete=models.SET_NULL, null=True, blank=True
     )
     file = models.FileField(upload_to=upload_path_document, max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -221,9 +213,15 @@ class Document(models.Model):
     def __str__(self):
         return f"{self.document_type or 'Document'}: {self.file.name}"
 
+    @property
+    def filename(self) -> str:
+        return os.path.basename(self.file.name) if self.file else ""
+
 
 class LinkType(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=120)
 
     def __str__(self) -> str:

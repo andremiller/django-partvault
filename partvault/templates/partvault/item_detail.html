@@ -252,9 +252,11 @@
                     <span class="pv-detail-label d-block mb-2">Documents</span>
                     <ul class="list-unstyled mb-0">
                         {% for document in documents %}
-                            <li>
-                                <span class="pv-subtle">{{ document.document_type|default:"Document" }}:</span>
-                                <a href="{{ document.file.url }}" target="_blank" rel="noopener">{{ document.file.name }}</a>
+                            <li class="mb-1">
+                                <a class="text-decoration-none" href="{{ document.file.url }}" target="_blank" rel="noopener">
+                                    <span class="badge text-bg-secondary me-2">{{ document.document_type|default:"Document" }}</span>
+                                    {{ document.filename }}
+                                </a>
                             </li>
                         {% endfor %}
                     </ul>
@@ -268,9 +270,11 @@
                     <span class="pv-detail-label d-block mb-2">Links</span>
                     <ul class="list-unstyled mb-0">
                         {% for link in links %}
-                            <li>
-                                <span class="pv-subtle">{{ link.link_type|default:"Link" }}:</span>
-                                <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.url }}</a>
+                            <li class="mb-1">
+                                <a class="text-decoration-none" href="{{ link.url }}" target="_blank" rel="noopener">
+                                    <span class="badge text-bg-secondary me-2">{{ link.link_type|default:"Link" }}</span>
+                                    {{ link.url }}
+                                </a>
                             </li>
                         {% endfor %}
                     </ul>

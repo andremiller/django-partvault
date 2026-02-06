@@ -5,7 +5,6 @@ from .models import (
     Category,
     Collection,
     Document,
-    DocumentType,
     Item,
     Link,
     LinkType,
@@ -61,11 +60,15 @@ class StatusAdmin(admin.ModelAdmin):
     list_select_related = ["user"]
 
 
+@admin.register(LinkType)
+class LinkTypeAdmin(admin.ModelAdmin):
+    list_display = ["name", "user"]
+    list_select_related = ["user"]
+
+
 admin.site.register(AssetTagSequence)
 admin.site.register(Collection)
-admin.site.register(DocumentType)
 admin.site.register(Document)
-admin.site.register(LinkType)
 admin.site.register(Link)
 admin.site.register(Photo)
 admin.site.register(Profile)
