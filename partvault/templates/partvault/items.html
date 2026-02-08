@@ -32,9 +32,9 @@
         {% endif %}
     </div>
 </div>
-{% if is_all_items_view %}
-    <form method="get" action="{% url 'items_all' %}" class="row g-2 align-items-end mb-3">
-        <div class="col-12 col-md-6 col-lg-4">
+<form method="get" action="{{ items_url }}" class="row g-2 align-items-end mb-3">
+    {% if is_all_items_view %}
+        <div class="col-12 col-md-6 col-lg-3">
             <label class="form-label mb-1" for="collection-filter">Collection</label>
             <select class="form-select" id="collection-filter" name="collection">
                 <option value="">All collections</option>
@@ -48,16 +48,55 @@
                 {% endfor %}
             </select>
         </div>
+    {% endif %}
+    <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label mb-1" for="category-filter">Category</label>
+        <select class="form-select" id="category-filter" name="category">
+            <option value="">All categories</option>
+            {% for filter_category in available_categories %}
+                <option
+                    value="{{ filter_category.id }}"
+                    {% if selected_category_id == filter_category.id %}selected{% endif %}
+                >
+                    {{ filter_category.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label mb-1" for="manufacturer-filter">Manufacturer</label>
+        <select class="form-select" id="manufacturer-filter" name="manufacturer">
+            <option value="">All manufacturers</option>
+            {% for filter_manufacturer in available_manufacturers %}
+                <option
+                    value="{{ filter_manufacturer.id }}"
+                    {% if selected_manufacturer_id == filter_manufacturer.id %}selected{% endif %}
+                >
+                    {{ filter_manufacturer.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label mb-1" for="search-filter">Search</label>
+        <input
+            class="form-control"
+            id="search-filter"
+            name="q"
+            type="search"
+            value="{{ search_term }}"
+            placeholder="Name, model, serial, tag, notes..."
+        />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Apply filters</button>
+    </div>
+    {% if has_active_filters %}
         <div class="col-auto">
-            <button type="submit" class="btn btn-outline-primary">Apply filter</button>
+            <a class="btn btn-link" href="{{ items_url }}">Clear</a>
         </div>
-        {% if selected_collection %}
-            <div class="col-auto">
-                <a class="btn btn-link" href="{% url 'items_all' %}">Clear</a>
-            </div>
-        {% endif %}
-    </form>
-{% endif %}
+    {% endif %}
+</form>
 <div class="table-responsive pv-table-wrap">
     <table class="table table-hover align-middle">
         <thead>

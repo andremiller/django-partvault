@@ -1,5 +1,6 @@
 from io import BytesIO
 from mimetypes import guess_type
+from urllib.parse import urlencode
 
 from PIL import Image, ImageOps
 from django.contrib import messages
@@ -216,8 +217,21 @@ def items(request, collection_id=None):
                 request.user.profile.active_collection = selected_collection
                 request.user.profile.save(update_fields=["active_collection"])
 
+    item_scope = Item.objects.filter(collection__in=collection_queryset)
+    if selected_collection is not None:
+        item_scope = item_scope.filter(collection=selected_collection)
+
+    taxonomy_item_filter = {"item__collection__in": collection_queryset}
+    if selected_collection is not None:
+        taxonomy_item_filter = {"item__collection": selected_collection}
+
+    available_categories = Category.objects.filter(**taxonomy_item_filter).distinct()
+    available_manufacturers = Manufacturer.objects.filter(
+        **taxonomy_item_filter
+    ).distinct()
+
     item_list = (
-        Item.objects.filter(collection__in=collection_queryset)
+        item_scope
         .select_related(
             "collection__owner__profile",
             "category",
@@ -233,28 +247,43 @@ def items(request, collection_id=None):
             )
         )
     )
-    if selected_collection is not None:
-        item_list = item_list.filter(collection=selected_collection)
 
+    selected_category_id = None
     category_id = request.GET.get("category")
-    if category_id is not None:
+    if category_id not in (None, ""):
         try:
-            category_id = int(category_id)
+            selected_category_id = int(category_id)
         except (TypeError, ValueError):
             invalid_filter = True
         else:
-            item_list = item_list.filter(category_id=category_id)
+            item_list = item_list.filter(category_id=selected_category_id)
+
+    selected_manufacturer_id = None
     manufacturer_id = request.GET.get("manufacturer")
-    if manufacturer_id is not None:
+    if manufacturer_id not in (None, ""):
         try:
-            manufacturer_id = int(manufacturer_id)
+            selected_manufacturer_id = int(manufacturer_id)
         except (TypeError, ValueError):
             invalid_filter = True
         else:
-            item_list = item_list.filter(manufacturer_id=manufacturer_id)
+            item_list = item_list.filter(manufacturer_id=selected_manufacturer_id)
+
+    search_term = (request.GET.get("q") or "").strip()
+    if search_term:
+        item_list = item_list.filter(
+            Q(name__icontains=search_term)
+            | Q(category__name__icontains=search_term)
+            | Q(manufacturer__name__icontains=search_term)
+            | Q(model__icontains=search_term)
+            | Q(serial__icontains=search_term)
+            | Q(tags__name__icontains=search_term)
+            | Q(notes__icontains=search_term)
+        )
+
+    needs_distinct = bool(search_term)
+    parsed_tag_ids = []
     tag_ids = request.GET.getlist("tag")
     if tag_ids:
-        parsed_tag_ids = []
         for tag_id in tag_ids:
             try:
                 parsed_tag_ids.append(int(tag_id))
@@ -264,20 +293,35 @@ def items(request, collection_id=None):
         if not invalid_filter:
             for tag_id in parsed_tag_ids:
                 item_list = item_list.filter(tags__id=tag_id)
-            item_list = item_list.distinct()
+            needs_distinct = True
+    if needs_distinct:
+        item_list = item_list.distinct()
     if invalid_filter:
         item_list = item_list.none()
 
     if is_all_items_view:
         items_url = reverse("items_all")
-        filter_query_prefix = (
-            f"collection={selected_collection.id}&"
-            if selected_collection is not None
-            else ""
-        )
     else:
         items_url = reverse("items", kwargs={"collection_id": collection_id})
-        filter_query_prefix = ""
+    link_query_values = {}
+    if is_all_items_view and selected_collection is not None:
+        link_query_values["collection"] = selected_collection.id
+    if search_term:
+        link_query_values["q"] = search_term
+    filter_query_prefix = ""
+    if link_query_values:
+        filter_query_prefix = f"{urlencode(link_query_values)}&"
+
+    has_active_filters = bool(
+        selected_category_id is not None
+        or selected_manufacturer_id is not None
+        or search_term
+        or parsed_tag_ids
+        or (
+            is_all_items_view
+            and request.GET.get("collection") not in (None, "")
+        )
+    )
 
     context = {
         "item_list": item_list,
@@ -287,6 +331,12 @@ def items(request, collection_id=None):
             "owner__profile__user_code",
             "name",
         ),
+        "available_categories": available_categories.order_by("name"),
+        "available_manufacturers": available_manufacturers.order_by("name"),
+        "selected_category_id": selected_category_id,
+        "selected_manufacturer_id": selected_manufacturer_id,
+        "search_term": search_term,
+        "has_active_filters": has_active_filters,
         "is_all_items_view": is_all_items_view,
         "items_url": items_url,
         "filter_query_prefix": filter_query_prefix,
