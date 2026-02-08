@@ -11,6 +11,7 @@ urlpatterns = [
         views.photo_image,
         name="photo_image_scaled",
     ),
+    path("items/", views.items, name="items_all"),
     path("items/<int:collection_id>/", views.items, name="items"),
     path("items/new/", views.item_create, name="item_create"),
     path("items/<int:item_id>/edit/", views.item_edit, name="item_edit"),

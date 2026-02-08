@@ -5,6 +5,9 @@
     <div class="container-fluid py-2">
         <h1 class="display-6 fw-semibold">Welcome to PartVault</h1>
         <p class="lead pv-subtle mb-0">Catalog vintage hardware, track ownership and condition, and keep the details searchable for future repairs and restorations.</p>
+        <div class="mt-3">
+            <a class="btn btn-primary" href="{% url 'items_all' %}">View all items</a>
+        </div>
     </div>
 </div>
 {% if request.user.is_authenticated %}

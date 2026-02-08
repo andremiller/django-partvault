@@ -183,22 +183,47 @@ def index(request):
     return render(request, "partvault/index.html", context)
 
 
-def items(request, collection_id):
-    collection_queryset = Collection.objects.all()
+def items(request, collection_id=None):
+    is_all_items_view = collection_id is None
+    collection_queryset = Collection.objects.select_related("owner__profile")
     if not request.user.is_authenticated:
         collection_queryset = collection_queryset.filter(is_public=True)
     else:
         collection_queryset = collection_queryset.filter(
             Q(is_public=True) | Q(owner=request.user)
         )
-    collection = get_object_or_404(collection_queryset, pk=collection_id)
-    if request.user.is_authenticated and collection.owner_id == request.user.id:
-        if request.user.profile.active_collection_id != collection.id:
-            request.user.profile.active_collection = collection
-            request.user.profile.save(update_fields=["active_collection"])
+
+    selected_collection = None
+    invalid_filter = False
+    if collection_id is not None:
+        selected_collection = get_object_or_404(collection_queryset, pk=collection_id)
+    else:
+        selected_collection_id = request.GET.get("collection")
+        if selected_collection_id not in (None, ""):
+            try:
+                selected_collection_id = int(selected_collection_id)
+            except (TypeError, ValueError):
+                invalid_filter = True
+            else:
+                selected_collection = get_object_or_404(
+                    collection_queryset,
+                    pk=selected_collection_id,
+                )
+
+    if request.user.is_authenticated and selected_collection is not None:
+        if selected_collection.owner_id == request.user.id:
+            if request.user.profile.active_collection_id != selected_collection.id:
+                request.user.profile.active_collection = selected_collection
+                request.user.profile.save(update_fields=["active_collection"])
+
     item_list = (
-        Item.objects.filter(collection=collection)
-        .select_related("category", "manufacturer", "status")
+        Item.objects.filter(collection__in=collection_queryset)
+        .select_related(
+            "collection__owner__profile",
+            "category",
+            "manufacturer",
+            "status",
+        )
         .prefetch_related("tags")
         .prefetch_related(
             Prefetch(
@@ -208,7 +233,9 @@ def items(request, collection_id):
             )
         )
     )
-    invalid_filter = False
+    if selected_collection is not None:
+        item_list = item_list.filter(collection=selected_collection)
+
     category_id = request.GET.get("category")
     if category_id is not None:
         try:
@@ -240,7 +267,30 @@ def items(request, collection_id):
             item_list = item_list.distinct()
     if invalid_filter:
         item_list = item_list.none()
-    context = {"item_list": item_list, "collection": collection}
+
+    if is_all_items_view:
+        items_url = reverse("items_all")
+        filter_query_prefix = (
+            f"collection={selected_collection.id}&"
+            if selected_collection is not None
+            else ""
+        )
+    else:
+        items_url = reverse("items", kwargs={"collection_id": collection_id})
+        filter_query_prefix = ""
+
+    context = {
+        "item_list": item_list,
+        "collection": selected_collection if not is_all_items_view else None,
+        "selected_collection": selected_collection,
+        "available_collections": collection_queryset.order_by(
+            "owner__profile__user_code",
+            "name",
+        ),
+        "is_all_items_view": is_all_items_view,
+        "items_url": items_url,
+        "filter_query_prefix": filter_query_prefix,
+    }
     return render(request, "partvault/items.html", context)
 
 

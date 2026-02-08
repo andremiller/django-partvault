@@ -3,15 +3,28 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
     <div class="d-flex align-items-center gap-3">
-        <h1 class="h3 mb-0">
-            <a class="text-decoration-none" href="{% url 'items' collection.id %}">
-                {{ collection.owner_code }} - {{ collection.name }} Items
-            </a>
-        </h1>
+        {% if is_all_items_view %}
+            <div>
+                <h1 class="h3 mb-0">
+                    <a class="text-decoration-none" href="{% url 'items_all' %}">All Items</a>
+                </h1>
+                {% if selected_collection %}
+                    <p class="small text-muted mb-0">
+                        Filtered to {{ selected_collection.owner_code }} - {{ selected_collection.name }}
+                    </p>
+                {% endif %}
+            </div>
+        {% else %}
+            <h1 class="h3 mb-0">
+                <a class="text-decoration-none" href="{% url 'items' collection.id %}">
+                    {{ collection.owner_code }} - {{ collection.name }} Items
+                </a>
+            </h1>
+        {% endif %}
         <span class="badge bg-secondary">{{ item_list|length }}</span>
     </div>
     <div class="d-flex align-items-center gap-2">
-        {% if request.user.is_authenticated and request.user == collection.owner %}
+        {% if not is_all_items_view and request.user.is_authenticated and request.user == collection.owner %}
             <a class="btn btn-sm btn-outline-primary" href="{% url 'collection_edit' collection.id %}">Edit collection</a>
         {% endif %}
         {% if request.user.is_authenticated %}
@@ -19,6 +32,32 @@
         {% endif %}
     </div>
 </div>
+{% if is_all_items_view %}
+    <form method="get" action="{% url 'items_all' %}" class="row g-2 align-items-end mb-3">
+        <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label mb-1" for="collection-filter">Collection</label>
+            <select class="form-select" id="collection-filter" name="collection">
+                <option value="">All collections</option>
+                {% for filter_collection in available_collections %}
+                    <option
+                        value="{{ filter_collection.id }}"
+                        {% if selected_collection and selected_collection.id == filter_collection.id %}selected{% endif %}
+                    >
+                        {{ filter_collection.owner_code }} - {{ filter_collection.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">Apply filter</button>
+        </div>
+        {% if selected_collection %}
+            <div class="col-auto">
+                <a class="btn btn-link" href="{% url 'items_all' %}">Clear</a>
+            </div>
+        {% endif %}
+    </form>
+{% endif %}
 <div class="table-responsive pv-table-wrap">
     <table class="table table-hover align-middle">
         <thead>
@@ -79,13 +118,18 @@
                         <a class="text-decoration-none" href="{% url 'item' item.id %}">
                             {{ item.asset_tag|default:"-" }}
                         </a>
+                        {% if is_all_items_view %}
+                            <div class="small text-muted">
+                                <span class="pv-code">{{ item.collection.owner_code|default:"-" }}</span>
+                            </div>
+                        {% endif %}
                     </td>
                     <td data-label="Name">{{ item.name }}</td>
                     <td data-label="Category">
                         {% if item.category %}
                             <a
                                 class="text-decoration-none"
-                                href="{% url 'items' collection.id %}?category={{ item.category.id }}"
+                                href="{{ items_url }}?{{ filter_query_prefix }}category={{ item.category.id }}"
                             >
                                 {{ item.category }}
                             </a>
@@ -97,7 +141,7 @@
                         {% if item.manufacturer %}
                             <a
                                 class="text-decoration-none"
-                                href="{% url 'items' collection.id %}?manufacturer={{ item.manufacturer.id }}"
+                                href="{{ items_url }}?{{ filter_query_prefix }}manufacturer={{ item.manufacturer.id }}"
                             >
                                 {{ item.manufacturer }}
                             </a>
@@ -111,7 +155,7 @@
                         {% for tag in item.tags.all %}
                             <a
                                 class="text-decoration-none"
-                                href="{% url 'items' collection.id %}?tag={{ tag.id }}"
+                                href="{{ items_url }}?{{ filter_query_prefix }}tag={{ tag.id }}"
                             >
                                 <span class="badge pv-tag me-1">{{ tag }}</span>
                             </a>
