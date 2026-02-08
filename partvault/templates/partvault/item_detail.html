@@ -144,7 +144,7 @@
                                 <a href="{% url 'photo_image' photo.id %}" target="_blank" rel="noopener">
                                     <img
                                         class="img-fluid rounded border"
-                                        src="{% url 'photo_image' photo.id %}"
+                                        src="{% url 'photo_image_scaled' photo.id 600 %}"
                                         alt="Photo for {{ item.name }}"
                                     />
                                 </a>
