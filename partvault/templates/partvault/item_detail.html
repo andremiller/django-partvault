@@ -90,6 +90,12 @@
                 <span class="pv-detail-value">{{ item.release_date|date:"Y-m" }}</span>
             </li>
         {% endif %}
+        {% if item.manufacture_date %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span class="pv-detail-label">Manufacture date</span>
+                <span class="pv-detail-value">{{ item.manufacture_date }}</span>
+            </li>
+        {% endif %}
         {% if item.location %}
             <li class="list-group-item d-flex justify-content-between">
                 <span class="pv-detail-label">Location</span>

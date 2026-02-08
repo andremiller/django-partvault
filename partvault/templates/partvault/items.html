@@ -107,7 +107,7 @@
                 <th scope="col">Category</th>
                 <th scope="col">Manufacturer</th>
                 <th scope="col">Model</th>
-                <th scope="col">Release date</th>
+                <th scope="col">Date</th>
                 <th scope="col">Tags</th>
                 <th scope="col">Status</th>
             </tr>
@@ -189,7 +189,21 @@
                         {% endif %}
                     </td>
                     <td data-label="Model">{{ item.model|default:"-" }}</td>
-                    <td data-label="Release date">{{ item.release_date|date:"Y-m"|default:"-" }}</td>
+                    <td data-label="Date">
+                        {% if item.release_date and item.manufacture_date %}
+                            {% if item.release_date <= item.manufacture_date %}
+                                {{ item.release_date|date:"Y-m" }}
+                            {% else %}
+                                {{ item.manufacture_date|date:"Y-m" }}
+                            {% endif %}
+                        {% elif item.release_date %}
+                            {{ item.release_date|date:"Y-m" }}
+                        {% elif item.manufacture_date %}
+                            {{ item.manufacture_date|date:"Y-m" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td data-label="Tags">
                         {% for tag in item.tags.all %}
                             <a

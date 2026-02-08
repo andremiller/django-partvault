@@ -153,6 +153,7 @@ class Item(models.Model):
     )
     notes = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="items")
+    manufacture_date = models.DateField(blank=True, null=True)
     release_date = models.DateField(blank=True, null=True)
     acquired_on = models.DateField(blank=True, null=True)
     last_tested_on = models.DateField(blank=True, null=True)

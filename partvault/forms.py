@@ -64,6 +64,7 @@ class ItemForm(forms.ModelForm):
             "model",
             "revision",
             "serial",
+            "manufacture_date",
             "release_date",
             "status",
             "parent_item",
@@ -74,6 +75,7 @@ class ItemForm(forms.ModelForm):
         ]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 4}),
+            "manufacture_date": forms.DateInput(attrs={"type": "date"}),
             "release_date": forms.DateInput(attrs={"type": "date"}),
             "acquired_on": forms.DateInput(attrs={"type": "date"}),
             "last_tested_on": forms.DateInput(attrs={"type": "date"}),
