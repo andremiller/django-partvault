@@ -1,10 +1,11 @@
 {% extends "partvault/base.html" %}
+{% load settings_tags %}
 
 {% block content %}
 <div class="p-4 p-md-5 mb-4 pv-hero">
     <div class="container-fluid py-2">
-        <h1 class="display-6 fw-semibold">Welcome to PartVault</h1>
-        <p class="lead pv-subtle mb-0">Catalog vintage hardware, track ownership and condition, and keep the details searchable for future repairs and restorations.</p>
+        <h1 class="display-6 fw-semibold">{% setting "INDEX_HERO_HEADER" "Welcome to PartVault" %}</h1>
+        <p class="lead pv-subtle mb-0">{% setting "INDEX_HERO_SUBTEXT" "This is Part Vault. Yet another inventory management program that allows you to keep track of what you have, where it is and what it looks like." %}</p>
         <div class="mt-3">
             <a class="btn btn-primary" href="{% url 'items_all' %}">View all items</a>
         </div>

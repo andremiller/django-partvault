@@ -126,6 +126,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
+# Configurable template copy.
+SITE_TITLE = "PartVault"
+INDEX_HERO_HEADER = "Welcome to PartVault"
+INDEX_HERO_SUBTEXT = (
+    "This is Part Vault. Yet another inventory management program that allows you to keep track of what you have, where it is and what it looks like."
+)
+
 # TODO: Make invitation mode configurable
 INVITATION_CODE = "pv2026"
 
