@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.paginator import Paginator
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Max, Prefetch, Q
 from django.forms import formset_factory, inlineformset_factory, modelformset_factory
@@ -299,6 +300,15 @@ def items(request, collection_id=None):
     if invalid_filter:
         item_list = item_list.none()
 
+    paginator = Paginator(item_list, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    item_list = page_obj.object_list
+    total_item_count = paginator.count
+
+    pagination_query_values = request.GET.copy()
+    pagination_query_values.pop("page", None)
+    pagination_query = pagination_query_values.urlencode()
+
     if is_all_items_view:
         items_url = reverse("items_all")
     else:
@@ -325,6 +335,9 @@ def items(request, collection_id=None):
 
     context = {
         "item_list": item_list,
+        "total_item_count": total_item_count,
+        "page_obj": page_obj,
+        "pagination_query": pagination_query,
         "collection": selected_collection if not is_all_items_view else None,
         "selected_collection": selected_collection,
         "available_collections": collection_queryset.order_by(
