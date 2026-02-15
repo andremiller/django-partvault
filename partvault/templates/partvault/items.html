@@ -157,11 +157,9 @@
                         <a class="text-decoration-none" href="{% url 'item' item.id %}">
                             {{ item.asset_tag|default:"-" }}
                         </a>
-                        {% if is_all_items_view %}
-                            <div class="small text-muted">
-                                <span class="pv-code">{{ item.collection.owner_code|default:"-" }}</span>
-                            </div>
-                        {% endif %}
+                        <div class="small text-muted">
+                            <span class="pv-code">{{ item.collection.owner_code|default:"-" }}-{{ item.collection.collection_code|default:"-" }}</span>
+                        </div>
                     </td>
                     <td data-label="Name">{{ item.name }}</td>
                     <td data-label="Category">
