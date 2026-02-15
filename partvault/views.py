@@ -232,8 +232,7 @@ def items(request, collection_id=None):
     ).distinct()
 
     item_list = (
-        item_scope
-        .select_related(
+        item_scope.select_related(
             "collection__owner__profile",
             "category",
             "manufacturer",
@@ -327,10 +326,7 @@ def items(request, collection_id=None):
         or selected_manufacturer_id is not None
         or search_term
         or parsed_tag_ids
-        or (
-            is_all_items_view
-            and request.GET.get("collection") not in (None, "")
-        )
+        or (is_all_items_view and request.GET.get("collection") not in (None, ""))
     )
 
     context = {
@@ -594,9 +590,7 @@ def _save_link_formset(formset, user):
             continue
         new_type = form.cleaned_data.get("new_link_type")
         if new_type:
-            link_type, _ = LinkType.objects.get_or_create(
-                user=user, name=new_type
-            )
+            link_type, _ = LinkType.objects.get_or_create(user=user, name=new_type)
             form.instance.link_type = link_type
 
     for instance in instances:
@@ -604,6 +598,27 @@ def _save_link_formset(formset, user):
 
     for instance in formset.deleted_objects:
         instance.delete()
+
+
+def _update_descendant_collections(item, collection):
+    seen_ids = {item.id}
+    parent_ids = [item.id]
+
+    while parent_ids:
+        child_ids = list(
+            Item.objects.filter(parent_item_id__in=parent_ids).values_list(
+                "id", flat=True
+            )
+        )
+        next_parent_ids = [
+            child_id for child_id in child_ids if child_id not in seen_ids
+        ]
+        if not next_parent_ids:
+            break
+
+        Item.objects.filter(id__in=next_parent_ids).update(collection=collection)
+        seen_ids.update(next_parent_ids)
+        parent_ids = next_parent_ids
 
 
 @login_required
@@ -631,7 +646,9 @@ def item_create(request):
                 related_formsets["photo_formset"].instance = item
                 related_formsets["photo_formset"].save()
                 related_formsets["document_formset"].instance = item
-                _save_document_formset(related_formsets["document_formset"], request.user)
+                _save_document_formset(
+                    related_formsets["document_formset"], request.user
+                )
                 related_formsets["link_formset"].instance = item
                 _save_link_formset(related_formsets["link_formset"], request.user)
                 new_categories = _save_user_inline_objects(
@@ -677,6 +694,7 @@ def item_create(request):
 @login_required
 def item_edit(request, item_id):
     item = get_object_or_404(Item, pk=item_id, collection__owner=request.user)
+    old_collection_id = item.collection_id
     formsets = _build_item_formsets(
         post_data=request.POST if request.method == "POST" else None
     )
@@ -696,10 +714,15 @@ def item_edit(request, item_id):
                 form.add_error("collection", "Select a collection you own.")
             else:
                 item = form.save(commit=False)
+                collection_changed = old_collection_id != collection.id
                 item.save()
+                if collection_changed:
+                    _update_descendant_collections(item, collection)
                 form.save_m2m()
                 related_formsets["photo_formset"].save()
-                _save_document_formset(related_formsets["document_formset"], request.user)
+                _save_document_formset(
+                    related_formsets["document_formset"], request.user
+                )
                 _save_link_formset(related_formsets["link_formset"], request.user)
                 new_categories = _save_user_inline_objects(
                     formsets["category_formset"], Category, collection.owner
