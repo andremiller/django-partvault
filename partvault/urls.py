@@ -1,9 +1,24 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 
-from . import views
+from . import spreadsheet_views, views
 
 urlpatterns = [
+    path(
+        "collections/<int:collection_id>/spreadsheet/template/",
+        spreadsheet_views.spreadsheet_template,
+        name="spreadsheet_template",
+    ),
+    path(
+        "collections/<int:collection_id>/spreadsheet/export/",
+        spreadsheet_views.spreadsheet_export,
+        name="spreadsheet_export",
+    ),
+    path(
+        "collections/<int:collection_id>/spreadsheet/import/",
+        spreadsheet_views.spreadsheet_import,
+        name="spreadsheet_import",
+    ),
     path("", views.index, name="index"),
     path("image/<int:photo_id>/", views.photo_image, name="photo_image"),
     path(

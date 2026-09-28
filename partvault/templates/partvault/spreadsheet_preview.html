@@ -1,0 +1,53 @@
+{% extends "partvault/base.html" %}
+
+{% block content %}
+<h1 class="h3">{% if import_complete %}Import complete{% elif import_attempted %}Import not saved{% else %}Spreadsheet preview{% endif %}</h1>
+<p class="pv-subtle">{{ collection.name }}</p>
+<div class="alert {% if import_complete %}alert-success{% elif plan.counts.errors %}alert-warning{% else %}alert-info{% endif %}">
+    <strong>{{ plan.counts.create }} {% if import_complete %}created{% else %}to create{% endif %} · {{ plan.counts.update }} {% if import_complete %}updated{% else %}to update{% endif %} · {{ plan.counts.unchanged }} unchanged · {{ plan.counts.errors }} rows with errors</strong>
+    <p class="mb-0">{% if import_complete %}Changes have been saved. No items were deleted.{% else %}Nothing has been changed yet. No items will be deleted.{% endif %}{% if plan.counts.errors %} Correct all errors in your workbook and upload it again before importing.{% endif %}</p>
+</div>
+{% if plan.new_values %}
+<div class="card mb-3">
+    <div class="card-header">Personal values {% if import_complete %}created{% else %}to create on import{% endif %}</div>
+    <div class="card-body">
+        {% for field, values in plan.new_values.items %}
+            <p class="mb-1"><strong>{{ field|capfirst }}:</strong> {{ values|join:", " }}</p>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<p class="text-muted">{% if import_complete %}New items are shown with their permanent asset tags. For updates, “(blank)” in After means the value was cleared.{% else %}New items receive permanent asset tags when imported. Temporary parent references are resolved automatically. For updates, a proposed “(blank)” clears the current value.{% endif %}</p>
+{% for row in result_rows %}
+<details class="card mb-2" {% if row.errors %}open{% endif %}>
+    <summary class="card-header">
+        Row {{ row.number }} · <strong>{% if import_complete and row.action == "create" %}Created{% elif import_complete and row.action == "update" %}Updated{% else %}{{ row.action|capfirst }}{% endif %}</strong> · {{ row.asset_tag|default:"New item" }} · {{ row.scalars.name|default:"Unnamed item" }}
+        {% if row.errors %}<span class="badge bg-danger">Errors</span>{% endif %}
+    </summary>
+    <div class="card-body">
+        {% if row.errors %}
+        <ul class="text-danger">{% for error in row.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if row.changes %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0 pv-spreadsheet-preview">
+                <thead><tr><th>Field</th>{% if row.action != "create" %}<th>{% if import_complete %}Before{% else %}Current{% endif %}</th>{% endif %}<th>{% if import_complete %}After{% else %}Proposed{% endif %}</th></tr></thead>
+                <tbody>
+                {% for change in row.changes %}
+                    <tr><th>{{ change.field }}</th>{% if row.action != "create" %}<td style="white-space: pre-wrap">{{ change.before|default:"(blank)" }}</td>{% endif %}<td style="white-space: pre-wrap">{{ change.after|default:"(blank)" }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif row.action == "create" %}<p class="mb-0">No nonblank fields supplied.</p>
+        {% else %}<p class="mb-0">No field changes.</p>{% endif %}
+    </div>
+</details>
+{% endfor %}
+{% if not import_complete %}
+<p class="text-muted">To import, upload your workbook again and choose Import now. The file will be validated against the collection's current data.</p>
+{% endif %}
+<div class="d-flex flex-wrap gap-2 mt-3">
+    <a class="btn btn-outline-secondary" href="{% url 'items' collection.id %}">Back to collection</a>
+</div>
+{% endblock %}

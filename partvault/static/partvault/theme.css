@@ -40,6 +40,10 @@ samp,
     font-family: "IBM Plex Mono", "Consolas", monospace;
 }
 
+.table.pv-spreadsheet-preview td {
+    font-family: inherit;
+}
+
 .pv-navbar {
     background: rgba(23, 34, 45, 0.92);
     backdrop-filter: blur(10px);

@@ -1,0 +1,36 @@
+{% extends "partvault/base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<h1 class="h3">Import spreadsheet</h1>
+<p class="pv-subtle">{{ collection.name }}</p>
+<div class="card mb-3">
+    <div class="card-body">
+        <p>Download a template for new items, or export this collection to edit existing items offline.</p>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <a class="btn btn-outline-primary" href="{% url 'spreadsheet_template' collection.id %}">Download blank template</a>
+            <a class="btn btn-outline-primary" href="{% url 'spreadsheet_export' collection.id %}">Export collection</a>
+        </div>
+        <ul class="mb-0">
+            <li>Leave <code>asset_tag</code> blank to create an item, or keep an existing tag to update it.</li>
+            <li>Use a temporary identifier such as <code>new:computer</code> to create a parent; use that identifier in another row's <code>parent_asset_tag</code>.</li>
+            <li>Blank cells clear existing values. Removing rows never deletes items.</li>
+            <li>Separate tags with commas. Put tag names containing commas in double quotes.</li>
+            <li>New category, manufacturer, status, and tag names become your personal values when imported.</li>
+        </ul>
+    </div>
+</div>
+<form method="post" enctype="multipart/form-data" class="card">
+    <div class="card-body">
+        {% csrf_token %}
+        {% bootstrap_form_errors form %}
+        {% bootstrap_field form.workbook %}
+        {% for error in form.action.errors %}<p class="text-danger">{{ error }}</p>{% endfor %}
+        <p class="text-muted">Excel .xlsx only, up to {{ max_mib }} MiB and {{ max_rows }} nonempty rows. Preview changes displays the proposed changes without saving. Import now validates and saves immediately. To import after previewing, upload the workbook again.</p>
+        <p class="text-muted">Each import creates new items for blank asset tags and <code>new:</code> identifiers. Export after importing to obtain permanent asset tags for future edits.</p>
+        <button type="submit" name="action" value="preview" class="btn btn-outline-primary">Preview changes</button>
+        <button type="submit" name="action" value="import" class="btn btn-primary">Import now</button>
+        <a class="btn btn-outline-secondary" href="{% url 'items' collection.id %}">Back to collection</a>
+    </div>
+</form>
+{% endblock %}

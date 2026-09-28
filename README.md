@@ -16,6 +16,7 @@ Built with Python and Django
 - Private / Public collections
 - Photo uploads directly from mobile camera
 - Attachments
+- Export / Import from spreadsheets
 
 ### Screenshots
 

@@ -136,6 +136,10 @@ INDEX_HERO_SUBTEXT = (
 # TODO: Make invitation mode configurable
 INVITATION_CODE = "pv2026"
 
+# Collection spreadsheet imports (overridable in local_settings.py).
+SPREADSHEET_MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+SPREADSHEET_MAX_ROWS = 5000
+
 try:
     from .local_settings import *
 except ImportError:
