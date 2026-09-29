@@ -51,6 +51,11 @@ urlpatterns = [
     path("profile/", views.profile, name="profile"),
     path("profile/edit/", views.profile_edit, name="profile_edit"),
     path(
+        "profile/generate-asset-tags/",
+        views.generate_asset_tags,
+        name="generate_asset_tags",
+    ),
+    path(
         "profile/reserve-asset-tags/",
         views.reserve_asset_tags,
         name="reserve_asset_tags",

@@ -3,6 +3,7 @@ from mimetypes import guess_type
 from urllib.parse import urlencode
 
 from PIL import Image, ImageOps
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -31,6 +32,7 @@ from .models import (
     Tag,
 )
 from .forms import (
+    AssetTagSheetForm,
     CategoryForm,
     CollectionForm,
     DocumentForm,
@@ -843,8 +845,13 @@ def collection_activate(request, collection_id):
 
 
 def profile(request):
+    return _render_profile(request, AssetTagSheetForm())
+
+
+def _render_profile(request, asset_tag_sheet_form):
     profile = None
     reserved_asset_tag_labels = []
+    default_tag_ranges = []
     if request.user.is_authenticated:
         try:
             profile = request.user.profile
@@ -882,14 +889,49 @@ def profile(request):
                 else:
                     label = f"{start_tag} - {end_tag}"
                 reserved_asset_tag_labels.append({"label": label, "count": count})
+                short_start = _int_to_base36(range_start)
+                short_end = _int_to_base36(range_end)
+                default_tag_ranges.append(
+                    short_start
+                    if range_start == range_end
+                    else f"{short_start}-{short_end}"
+                )
+    if not asset_tag_sheet_form.is_bound:
+        asset_tag_sheet_form.initial["tags"] = ",".join(default_tag_ranges)
+        prefix = profile.user_code[:1].upper() if profile else ""
+        if prefix and "A" <= prefix <= "Z":
+            asset_tag_sheet_form.initial["prefix"] = prefix
     return render(
         request,
         "partvault/profile.html",
         {
             "profile": profile,
             "reserved_asset_tags": reserved_asset_tag_labels,
+            "asset_tag_sheet_form": asset_tag_sheet_form,
         },
     )
+
+
+@login_required
+@require_POST
+def generate_asset_tags(request):
+    form = AssetTagSheetForm(request.POST)
+    if not form.is_valid():
+        return _render_profile(request, form)
+
+    from .asset_tag_sheets import asset_tag_sheet_pdf
+
+    response = HttpResponse(
+        asset_tag_sheet_pdf(
+            form.cleaned_data["tags"],
+            form.cleaned_data["prefix"],
+            settings.ASSET_TAG_URL_PREFIX,
+        ),
+        content_type="application/pdf",
+    )
+    response["Content-Disposition"] = 'attachment; filename="asset_tags.pdf"'
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @login_required

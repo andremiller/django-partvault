@@ -17,6 +17,7 @@ Built with Python and Django
 - Photo uploads directly from mobile camera
 - Attachments
 - Export / Import from spreadsheets
+- QR Code label generator
 
 ### Screenshots
 

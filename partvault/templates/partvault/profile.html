@@ -1,4 +1,5 @@
 {% extends "partvault/base.html" %}
+{% load django_bootstrap5 %}
 
 {% block content %}
 {% if user.is_authenticated %}
@@ -73,6 +74,24 @@
                 No reserved asset tags.
             </div>
         {% endif %}
+    </div>
+    <div class="card mt-3 pv-form-card">
+        <div class="card-header">QR sticker sheets</div>
+        <div class="card-body">
+            <p class="text-muted">
+                Download A4 sheets with 18 rows &times; 15 columns (270 stickers per page).
+                Any tags can be printed, including replacements; printing does not reserve tags.
+            </p>
+            <form action="{% url 'generate_asset_tags' %}" method="post">
+                {% csrf_token %}
+                {% bootstrap_form asset_tag_sheet_form %}
+                <p class="text-muted small">
+                    Tags are padded to six characters: prefix A and tag B print as A00000B.
+                    Print the PDF at actual size (100%).
+                </p>
+                <button class="btn btn-primary" type="submit">Download sticker PDF</button>
+            </form>
+        </div>
     </div>
 {% else %}
     <div class="card">

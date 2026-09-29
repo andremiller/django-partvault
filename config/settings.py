@@ -140,6 +140,9 @@ INVITATION_CODE = "pv2026"
 SPREADSHEET_MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 SPREADSHEET_MAX_ROWS = 5000
 
+# Complete QR URL prefix; the six-character asset tag is appended directly.
+ASSET_TAG_URL_PREFIX = "http://pv.local/a/"
+
 try:
     from .local_settings import *
 except ImportError:

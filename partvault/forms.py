@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -6,6 +8,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Q
 
 from .models import (
+    AssetTagSequence,
     Category,
     Collection,
     Document,
@@ -17,6 +20,62 @@ from .models import (
     Status,
     Tag,
 )
+
+
+class AssetTagSheetForm(forms.Form):
+    tags = forms.CharField(
+        label="Tags and ranges",
+        max_length=40000,
+        widget=forms.Textarea(
+            attrs={"rows": 3, "placeholder": "000-111,113,115,116-200"}
+        ),
+        help_text=(
+            "Enter base-36 tags (0-9 and A-Z), separated by commas. "
+            "For example: 1-A,C,F,10-1Z combines ranges and individual tags. "
+            "Ranges include both endpoints. Order and repeated tags are preserved. "
+            "Maximum 2,400 stickers per download."
+        ),
+    )
+    prefix = forms.CharField(
+        label="Label prefix letter",
+        max_length=1,
+        help_text="One letter, printed before the six-character tag; excluded from the QR URL.",
+    )
+
+    def clean_prefix(self):
+        prefix = self.cleaned_data["prefix"]
+        if not re.fullmatch(r"[A-Za-z]", prefix):
+            raise ValidationError("Enter one letter from A to Z.")
+        return prefix.upper()
+
+    def clean_tags(self):
+        ranges = []
+        count = 0
+        for entry in self.cleaned_data["tags"].split(","):
+            match = re.fullmatch(
+                r"([A-Za-z0-9]{1,6})(?:\s*-\s*([A-Za-z0-9]{1,6}))?",
+                entry.strip(),
+            )
+            if not match:
+                raise ValidationError(
+                    "Enter comma-separated tags or ranges, using 1-6 letters or digits "
+                    "per tag, for example: 000-111,113,115,116-200."
+                )
+            start = int(match[1], 36)
+            end = int(match[2], 36) if match[2] else start
+            if end < start:
+                raise ValidationError("Range endpoints must be in ascending order.")
+            count += end - start + 1
+            if count > 2400:
+                raise ValidationError(
+                    "Select at most 2,400 stickers per download, including repeats."
+                )
+            ranges.append((start, end))
+        return [
+            AssetTagSequence._to_base36(value).zfill(6)
+            for start, end in ranges
+            for value in range(start, end + 1)
+        ]
 
 
 class ProfileForm(forms.ModelForm):
