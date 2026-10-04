@@ -24,7 +24,11 @@ from django.urls import include, path, re_path
 
 from partvault.views import protected_media
 
-urlpatterns = [path("admin/", admin.site.urls), path("", include("partvault.urls"))]
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/v1/", include("partvault.api.urls")),
+    path("", include("partvault.urls")),
+]
 
 # External storage/web servers must enforce this policy too; see media-delivery.md.
 media_url = urlsplit(settings.MEDIA_URL)

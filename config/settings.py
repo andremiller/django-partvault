@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "rest_framework",
     "django_bootstrap5",
     "partvault.apps.PartvaultConfig",
     "django.contrib.admin",
@@ -142,6 +143,16 @@ SPREADSHEET_MAX_ROWS = 5000
 
 # Complete QR URL prefix; the six-character asset tag is appended directly.
 ASSET_TAG_URL_PREFIX = "http://pv.local/a/"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_PAGINATION_CLASS": "partvault.api.pagination.StrictPageNumberPagination",
+    "PAGE_SIZE": 50,
+}
 
 try:
     from .local_settings import *
