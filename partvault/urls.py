@@ -20,6 +20,9 @@ urlpatterns = [
         name="spreadsheet_import",
     ),
     path("", views.index, name="index"),
+    path(
+        "document/<int:document_id>/", views.document_download, name="document_download"
+    ),
     path("image/<int:photo_id>/", views.photo_image, name="photo_image"),
     path(
         "image/<int:photo_id>/<int:long_edge>/",

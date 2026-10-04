@@ -103,16 +103,16 @@
             </li>
         {% endif %}
 
-        {% if item.parent_item %}
+        {% if item.visible_parent %}
             <li class="list-group-item pv-detail-block">
                 <span class="pv-detail-label d-block mb-2">Parent item</span>
-                <a class="text-decoration-none" href="{% url 'item' item.parent_item.id %}">
+                <a class="text-decoration-none" href="{% url 'item' item.visible_parent.id %}">
                     <div class="d-flex align-items-center gap-3">
-                        {% with photo=item.parent_item.ordered_photos.0 %}
+                        {% with photo=item.visible_parent.ordered_photos.0 %}
                             {% if photo %}
                                 <img
                                     src="{% url 'photo_image_scaled' photo.id 120 %}"
-                                    alt="Thumbnail for {{ item.parent_item.name }}"
+                                    alt="Thumbnail for {{ item.visible_parent.name }}"
                                     class="pv-thumb border"
                                 />
                             {% else %}
@@ -125,11 +125,11 @@
                             {% endif %}
                         {% endwith %}
                         <div>
-                            <div class="fw-semibold text-dark">{{ item.parent_item.name }}</div>
+                            <div class="fw-semibold text-dark">{{ item.visible_parent.name }}</div>
                             <div class="pv-subtle">
-                                {{ item.parent_item.category|default:"-" }}
-                                {% if item.parent_item.tags.exists %}
-                                    {% for tag in item.parent_item.tags.all %}
+                                {{ item.visible_parent.category|default:"-" }}
+                                {% if item.visible_parent.tags.exists %}
+                                    {% for tag in item.visible_parent.tags.all %}
                                         <span class="badge pv-tag ms-1">{{ tag }}</span>
                                     {% endfor %}
                                 {% endif %}
@@ -259,7 +259,7 @@
                     <ul class="list-unstyled mb-0">
                         {% for document in documents %}
                             <li class="mb-1">
-                                <a class="text-decoration-none" href="{{ document.file.url }}" target="_blank" rel="noopener">
+                                <a class="text-decoration-none" href="{% url 'document_download' document.id %}" target="_blank" rel="noopener">
                                     <span class="badge text-bg-secondary me-2">{{ document.document_type|default:"Document" }}</span>
                                     {{ document.filename }}
                                 </a>

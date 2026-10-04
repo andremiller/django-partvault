@@ -16,6 +16,9 @@ from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+
+from .access import visible_collections, visible_items
 
 from .models import (
     AssetTagSequence,
@@ -85,14 +88,6 @@ def _int_to_base36(value: int) -> str:
     return "".join(reversed(chars))
 
 
-def _user_can_view_photo(request, photo: Photo) -> bool:
-    if photo.item.collection.is_public:
-        return True
-    if not request.user.is_authenticated:
-        return False
-    return photo.item.collection.owner_id == request.user.id
-
-
 def _serialize_resized_image(image: Image.Image, output_format: str) -> bytes:
     buffer = BytesIO()
     if output_format == "JPEG":
@@ -101,27 +96,29 @@ def _serialize_resized_image(image: Image.Image, output_format: str) -> bytes:
     return buffer.getvalue()
 
 
+@never_cache
 def photo_image(request, photo_id, long_edge=None):
     photo = get_object_or_404(
-        Photo.objects.select_related("item__collection"), pk=photo_id
+        Photo.objects.filter(item__in=visible_items(request.user)), pk=photo_id
     )
     if not photo.image:
-        raise Http404("Photo not found")
-    if not _user_can_view_photo(request, photo):
         raise Http404("Photo not found")
 
     content_type, _ = guess_type(photo.image.name)
     if not content_type:
         content_type = "application/octet-stream"
 
-    if long_edge is None:
-        photo.image.open("rb")
-        return FileResponse(photo.image, content_type=content_type)
-
-    if long_edge < 1:
+    if long_edge is not None and long_edge < 1:
         return HttpResponse(b"Invalid image size.", status=400)
 
-    photo.image.open("rb")
+    try:
+        photo.image.open("rb")
+    except FileNotFoundError:
+        raise Http404("Photo not found") from None
+
+    if long_edge is None:
+        return FileResponse(photo.image, content_type=content_type)
+
     image = Image.open(photo.image)
     image = ImageOps.exif_transpose(image)
     width, height = image.size
@@ -136,7 +133,43 @@ def photo_image(request, photo_id, long_edge=None):
     output_format = image.format or "JPEG"
     content_type = Image.MIME.get(output_format, "image/jpeg")
     data = _serialize_resized_image(resized, output_format)
+    photo.image.close()
     return HttpResponse(data, content_type=content_type)
+
+
+@never_cache
+def document_download(request, document_id):
+    document = get_object_or_404(
+        Document.objects.filter(item__in=visible_items(request.user)), pk=document_id
+    )
+    if not document.file:
+        raise Http404("Document not found")
+    try:
+        document.file.open("rb")
+    except FileNotFoundError:
+        raise Http404("Document not found") from None
+    return FileResponse(document.file, as_attachment=True, filename=document.filename)
+
+
+@never_cache
+def protected_media(request, path):
+    """Resolve old storage URLs through records, never serve arbitrary disk paths."""
+    # Authorize current ownership even after moves; fail closed for shared paths.
+    photos = Photo.objects.filter(image=path)
+    documents = Document.objects.filter(file=path)
+    visible = visible_items(request.user)
+    if (
+        photos.exclude(item__in=visible).exists()
+        or documents.exclude(item__in=visible).exists()
+    ):
+        raise Http404("File not found")
+    photo = photos.first()
+    if photo:
+        return photo_image(request, photo.pk)
+    document = documents.first()
+    if document:
+        return document_download(request, document.pk)
+    raise Http404("File not found")
 
 
 def index(request):
@@ -189,13 +222,9 @@ def index(request):
 
 def items(request, collection_id=None):
     is_all_items_view = collection_id is None
-    collection_queryset = Collection.objects.select_related("owner__profile")
-    if not request.user.is_authenticated:
-        collection_queryset = collection_queryset.filter(is_public=True)
-    else:
-        collection_queryset = collection_queryset.filter(
-            Q(is_public=True) | Q(owner=request.user)
-        )
+    collection_queryset = visible_collections(request.user).select_related(
+        "owner__profile"
+    )
 
     selected_collection = None
     invalid_filter = False
@@ -206,7 +235,7 @@ def items(request, collection_id=None):
         if selected_collection_id not in (None, ""):
             try:
                 selected_collection_id = int(selected_collection_id)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 invalid_filter = True
             else:
                 selected_collection = get_object_or_404(
@@ -255,7 +284,7 @@ def items(request, collection_id=None):
     if category_id not in (None, ""):
         try:
             selected_category_id = int(category_id)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             invalid_filter = True
         else:
             item_list = item_list.filter(category_id=selected_category_id)
@@ -265,7 +294,7 @@ def items(request, collection_id=None):
     if manufacturer_id not in (None, ""):
         try:
             selected_manufacturer_id = int(manufacturer_id)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             invalid_filter = True
         else:
             item_list = item_list.filter(manufacturer_id=selected_manufacturer_id)
@@ -289,7 +318,7 @@ def items(request, collection_id=None):
         for tag_id in tag_ids:
             try:
                 parsed_tag_ids.append(int(tag_id))
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 invalid_filter = True
                 break
         if not invalid_filter:
@@ -373,7 +402,8 @@ def collections(request):
 
 def item(request, item_id):
     grandchild_queryset = (
-        Item.objects.select_related("category")
+        visible_items(request.user)
+        .select_related("category")
         .prefetch_related(
             Prefetch(
                 "photo_set",
@@ -384,7 +414,8 @@ def item(request, item_id):
         .order_by("name")
     )
     child_queryset = (
-        Item.objects.select_related("category")
+        visible_items(request.user)
+        .select_related("category")
         .prefetch_related(
             Prefetch(
                 "contained_items",
@@ -399,33 +430,44 @@ def item(request, item_id):
         )
         .order_by("name")
     )
-    item_queryset = Item.objects.select_related(
-        "category",
-        "collection",
-        "manufacturer",
-        "parent_item",
-        "parent_item__category",
-        "status",
-    ).prefetch_related(
-        "tags",
-        Prefetch(
-            "contained_items",
-            queryset=child_queryset,
-            to_attr="ordered_children",
-        ),
-        Prefetch(
-            "photo_set",
-            queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
-            to_attr="ordered_photos",
-        ),
-        Prefetch(
-            "parent_item__photo_set",
-            queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
-            to_attr="ordered_photos",
-        ),
+    item_queryset = (
+        visible_items(request.user)
+        .select_related(
+            "category",
+            "collection",
+            "manufacturer",
+            "status",
+        )
+        .prefetch_related(
+            "tags",
+            Prefetch(
+                "contained_items",
+                queryset=child_queryset,
+                to_attr="ordered_children",
+            ),
+            Prefetch(
+                "photo_set",
+                queryset=Photo.objects.order_by("-is_thumbnail", "-uploaded_at"),
+                to_attr="ordered_photos",
+            ),
+            Prefetch(
+                "parent_item",
+                queryset=visible_items(request.user)
+                .select_related("category")
+                .prefetch_related(
+                    "tags",
+                    Prefetch(
+                        "photo_set",
+                        queryset=Photo.objects.order_by(
+                            "-is_thumbnail", "-uploaded_at"
+                        ),
+                        to_attr="ordered_photos",
+                    ),
+                ),
+                to_attr="visible_parent",
+            ),
+        )
     )
-    if not request.user.is_authenticated:
-        item_queryset = item_queryset.filter(collection__is_public=True)
     item = get_object_or_404(item_queryset, pk=item_id)
     description_parts = []
     if item.category:
@@ -456,9 +498,7 @@ def item(request, item_id):
 
 
 def item_by_asset_tag(request, asset_tag):
-    item_queryset = Item.objects.all()
-    if not request.user.is_authenticated:
-        item_queryset = item_queryset.filter(collection__is_public=True)
+    item_queryset = visible_items(request.user)
     normalized_tag = asset_tag.strip().upper()
     item = get_object_or_404(item_queryset, asset_tag=normalized_tag)
     return redirect("item", item_id=item.id)
@@ -772,9 +812,7 @@ def item_delete(request, item_id):
 
 
 def collection(request, collection_id):
-    collection_queryset = Collection.objects.all()
-    if not request.user.is_authenticated:
-        collection_queryset = collection_queryset.filter(is_public=True)
+    collection_queryset = visible_collections(request.user)
     collection = get_object_or_404(collection_queryset, pk=collection_id)
     return render(
         request,
