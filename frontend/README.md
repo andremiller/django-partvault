@@ -1,8 +1,9 @@
 # PartVault frontend
 
-Phase 2 provides a Vue 3 / TypeScript / Quasar shell at `/app/`. Items, Collections
-and account links currently open the working Django pages. The item browser is
-Phase 3; this shell does not claim workflow parity.
+Phases 2–3 provide a Vue 3 / TypeScript / Quasar shell at `/app/` and item browser
+at `/app/items/` and `/app/items/{collection_id}/`. Collections, account, item
+detail and editor links open the working Django pages. User acceptance and
+legacy/API parity remain pending.
 
 ## Local setup
 
@@ -160,3 +161,69 @@ Use isolated data for session/account scenarios, never live inventory as fixture
   CSRF failures. No unsafe write may replay automatically.
 - [ ] Confirm generated JS/CSS/fonts are available through the operator's actual
   static host and source manifest path; record production media/proxy checks separately.
+
+## Phase 3 item browser
+
+Open `http://127.0.0.1:8000/app/items/` after the local build/server steps above.
+The local SQLite database contains user-confirmed test data; the manual browser
+account is documented in the local `AGENTS.md`. No automated tests or harness
+were added or run.
+
+- Desktop uses server-backed QTable; below 1024px a thumbnail-led list replaces
+  the table. Both share the same filters, sort, page and page-size state.
+- URL keys: `search` (legacy `q` is accepted), `collection`, `category`,
+  `manufacturer`, repeated `tag` (AND), `ordering`, `page`, `page_size`.
+  Defaults: `-updated_at`, page 1, 50 items; page size supports 1–100.
+  `/app/items/{collection_id}/` takes precedence over query `collection`.
+  Empty optional values use defaults; invalid IDs/repeated singletons/sorts show
+  an error instead of issuing a broader item read. Unrelated query keys are not
+  forwarded to the API. Editing search writes `search` and removes legacy `q`.
+- Search debounces 300ms and Enter submits immediately. Each settled edit pushes
+  history; Back/Forward restores URL state. Filter, sort and page-size changes
+  reset page 1. Other controls commit any pending search draft before navigation.
+  Superseded item/context/facet reads are cancelled and generation-guarded.
+  Query-only navigation preserves keyboard focus; page navigation focuses title.
+- Collection choices use paginated `collections/` and include empty collections.
+  Category/manufacturer/tag selectors use paginated visible-record facets, omit
+  their own filter to offer alternatives, support text search and Load more.
+  No editor catalog or whole-inventory fetch is used. Selected labels come from
+  returned items/choices or collection detail; unmatched bookmarked IDs display
+  explicit `Category #id` / `Tags (match all) #id` fallback labels.
+- Columns are configurable locally in `partvault.items.columns.v1` storage;
+  Name is required. Storage failure falls back to defaults. No identity,
+  credentials or authoritative inventory is kept in that preference.
+- Browsing a collection does not activate it. Make active collection is an
+  explicit owner-only CSRF-protected POST using the existing guarded helper.
+  New item opens the legacy editor with the active collection selected; the page
+  explains that context. Detail/Edit remain `/item/{id}/` and `/items/{id}/edit/`.
+- Empty inventory, no matches, stable loading, retryable API/session errors and
+  unavailable pages have distinct feedback. No automatic unsafe retry is added.
+
+### Phase 3 user-validation checklist
+
+All results are pending. Use disposable/test data and record dated role/context
+and outcomes in [the Phase 3 record](../ui-migrate-phase-3.md#completion-record).
+
+- [ ] Anonymous/public, owner/private and another-user reads match legacy/API
+  visibility, counts and labels; empty collections are discoverable.
+- [ ] More than one page: search across all documented fields, combine category,
+  manufacturer and two tags, compare tag AND results, sort each allowed field
+  both ways, change page size and reach final/first pages. No client-side global
+  sorting or complete inventory download occurs.
+- [ ] Type/filter quickly and navigate Back/Forward, bookmark/refresh direct
+  collection and query URLs, use legacy `q`, clear filters and change sort/page
+  with a pending search draft. The latest query wins, with no stale results.
+- [ ] Invalid/nonexistent/private collection, invalid IDs/sort, out-of-range page,
+  failed item/facet/session requests and retry provide usable recovery.
+- [ ] Collection activation: only own context can activate; valid/missing CSRF,
+  missing profile, double click and ambiguous network response behave as the
+  shared contract specifies. New item uses the displayed active context.
+- [ ] Configure columns, restore defaults, reload, block local storage; item and
+  collection links retain native new-tab/keyboard behavior and legacy editing.
+- [ ] Desktop 1440px, tablet 768px, mobile 360px, 200% zoom, reduced motion,
+  keyboard traversal, selector pagination/search, column dialog containment,
+  long names/many tags/missing photos and large counts remain usable.
+
+Implementation uses the official [QTable server-pagination guidance](https://quasar.dev/vue-components/table/#server-side-pagination-filter-and-sorting)
+and [QSelect async/filter guidance](https://quasar.dev/vue-components/select/).
+Local rendered review is partial evidence, separate from this checklist.

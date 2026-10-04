@@ -22,3 +22,19 @@ export interface Page<T> {
 }
 
 export type FieldErrors = Record<string, string[]>
+
+export interface Label { id: number; name: string }
+export interface ItemSummary {
+  id: number
+  name: string
+  asset_tag: string | null
+  collection: CollectionSummary
+  category: Label | null
+  manufacturer: Label | null
+  model: string
+  status: (Label & { color: string }) | null
+  tags: Label[]
+  thumbnail_url: string | null
+  updated_at: string
+  can_edit: boolean
+}

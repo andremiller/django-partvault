@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import NotFoundPage from '../pages/NotFoundPage.vue'
+import ItemsPage from '../pages/ItemsPage.vue'
 
 export const router = createRouter({
   history: createWebHistory('/app/'),
   routes: [
     { path: '/', name: 'home', component: HomePage, meta: { title: 'Inventory' } },
+    { path: '/items/', name: 'items', component: ItemsPage, meta: { title: 'Items' } },
+    { path: '/items/:collectionId([1-9]\\d*)/', name: 'collection-items', component: ItemsPage, meta: { title: 'Items' } },
     ...(import.meta.env.DEV ? [{ path: '/__preview/', component: () => import('../pages/PreviewPage.vue'), meta: { title: 'Component preview' } }] : []),
     { path: '/:pathMatch(.*)*', component: NotFoundPage, meta: { title: 'Page unavailable' } },
   ],
@@ -23,7 +26,7 @@ function siteTitle(): string {
   return 'PartVault'
 }
 export const appTitle = siteTitle()
-router.afterEach((to) => {
+router.afterEach((to, from) => {
   document.title = `${String(to.meta.title ?? 'Inventory')} | ${appTitle}`
-  requestAnimationFrame(() => document.getElementById('page-title')?.focus({ preventScroll: true }))
+  if (to.path !== from.path) requestAnimationFrame(() => document.getElementById('page-title')?.focus({ preventScroll: true }))
 })

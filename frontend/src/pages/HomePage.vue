@@ -77,16 +77,16 @@ const itemsUrl = computed(() => activeCollection.value ? `/items/${activeCollect
     class="pv-destinations"
     aria-label="Inventory navigation"
   >
-    <a
+    <router-link
       class="pv-destination"
-      :href="error ? '/items/' : itemsUrl"
+      :to="error ? '/items/' : itemsUrl"
     >
       <div><h2>Items</h2><p>Search and filter your visible inventory.</p></div><q-icon
         :name="mdiArrowRight"
         size="24px"
         aria-hidden="true"
       />
-    </a>
+    </router-link>
     <a
       class="pv-destination"
       href="/collections/"

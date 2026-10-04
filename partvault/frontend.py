@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from pathlib import Path, PurePosixPath
 
 from django.conf import settings
@@ -78,7 +79,8 @@ def spa_shell(request, spa_path=""):
             "Frontend build is missing or invalid; build assets before serving /app/."
         )
         return render(request, "partvault/spa_unavailable.html", context, status=503)
-    # Phase 2 implements the overview only; unknown app paths get a client 404 view.
+    # Keep known page routes aligned with the Vue router during coexistence.
+    known_page = not spa_path or re.fullmatch(r"items(?:/[1-9][0-9]*)?/?", spa_path)
     return render(
-        request, "partvault/spa.html", context, status=404 if spa_path else 200
+        request, "partvault/spa.html", context, status=200 if known_page else 404
     )

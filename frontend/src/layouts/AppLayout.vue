@@ -81,7 +81,7 @@ function submitLogout(event: SubmitEvent) {
             no-caps
             :icon="mdiPackageVariantClosed"
             label="Items"
-            :href="itemsUrl"
+            :to="itemsUrl"
           />
           <q-btn
             flat
@@ -177,7 +177,7 @@ function submitLogout(event: SubmitEvent) {
         <q-list>
           <q-item
             clickable
-            :href="itemsUrl"
+            :to="itemsUrl"
           >
             <q-item-section avatar>
               <q-icon :name="mdiPackageVariantClosed" />

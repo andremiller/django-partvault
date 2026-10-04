@@ -111,3 +111,54 @@ h1:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+// Compact inventory table on desktop; thumbnail-led list below 1024px.
+.q-btn:focus-visible, .q-item:focus-visible { outline: 3px solid var(--pv-brand) !important; outline-offset: 3px; }
+.pv-heading-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.pv-browser-context { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.pv-browser-context .pv-code { margin-left: 8px; }
+.pv-create-context { margin-bottom: 16px; font-size: 13px; }
+.pv-browser-controls { background: var(--pv-surface); padding: 16px; border: 1px solid var(--pv-border); border-radius: var(--pv-radius-panel); }
+.pv-browser-search { display: flex; gap: 12px; }
+.pv-browser-search > .q-input { flex: 1; min-width: 0; }
+.pv-browser-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.pv-browser-filters .q-field { min-width: 0; }
+.pv-filter-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 40px; margin-top: 8px; color: var(--pv-muted); font-size: 13px; }
+.pv-results-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 24px 0 16px; }
+.pv-results-toolbar > span { margin-right: auto; }
+.pv-results-toolbar > .q-select { width: 220px; }
+.pv-item-results { min-height: 280px; }
+.pv-items-table { border-color: var(--pv-border); border-radius: var(--pv-radius-panel); }
+.pv-items-table .q-table th { font-size: 13px; font-weight: 600; color: var(--pv-muted); }
+.pv-items-table .q-table td { font-size: 14px; padding: 12px 8px; white-space: normal; overflow-wrap: anywhere; max-width: 240px; }
+.pv-items-table .q-table th:first-child, .pv-items-table .q-table td:first-child { padding-left: 16px; }
+.pv-item-name { font-weight: 500; display: inline-block; min-width: 150px; }
+.pv-item-thumbnail { width: 64px; height: 64px; display: flex; flex-shrink: 0; align-items: center; justify-content: center; border-radius: var(--pv-radius-image); background: var(--pv-bg); color: var(--pv-muted); overflow: hidden; }
+.pv-item-thumbnail img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.pv-items-mobile { background: var(--pv-surface); border: 1px solid var(--pv-border); border-radius: var(--pv-radius-panel); }
+.pv-mobile-item { display: flex; gap: 16px; padding: 16px; }
+.pv-mobile-item + .pv-mobile-item { border-top: 1px solid var(--pv-border); }
+.pv-mobile-item-info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pv-mobile-item-info h2 { font-size: 16px; }
+.pv-mobile-item-info h2 a { display: inline-flex; align-items: center; min-height: 44px; }
+.pv-mobile-item-info p { font-size: 14px; margin-top: 4px; }
+.pv-mobile-item-info .pv-code { font-size: 12px; }
+.pv-mobile-tags { color: var(--pv-muted); }
+.pv-mobile-item-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.pv-mobile-item-links a { display: inline-flex; align-items: center; min-height: 44px; }
+.pv-item-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.pv-item-pagination > .q-select { width: 150px; margin-right: auto; }
+.pv-column-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1023px) {
+  .pv-browser-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .pv-browser-filters { grid-template-columns: 1fr; }
+  .pv-results-toolbar > span { flex-basis: 100%; }
+  .pv-results-toolbar > .q-select { width: 100%; }
+  .pv-item-pagination { justify-content: center; gap: 8px; }
+  .pv-item-pagination > .q-select { width: 150px; flex-basis: 100%; margin: 0 0 8px; }
+  .pv-mobile-item { gap: 12px; padding: 16px 12px; }
+  .pv-browser-controls .q-field.q-field--dense .q-field__control, .pv-results-toolbar .q-field.q-field--dense .q-field__control, .pv-item-pagination .q-field.q-field--dense .q-field__control { min-height: 44px; }
+}
+.pv-browser-search > .q-btn { flex-shrink: 0; }
