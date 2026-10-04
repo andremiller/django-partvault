@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useQuasar, type QTableProps } from 'quasar'
-import type { LocationQueryRaw } from 'vue-router'
+import { useRoute, type LocationQueryRaw } from 'vue-router'
+import { itemRoute } from '../api/itemNavigation'
 import { mdiPlus, mdiRefresh, mdiFilterOutline } from '@quasar/extras/mdi-v7'
 import { ApiError, apiRequest } from '../api/client'
 import { useSession } from '../composables/useSession'
@@ -15,6 +16,7 @@ import BrowserSelector from '../components/items/BrowserSelector.vue'
 import ItemThumbnail from '../components/items/ItemThumbnail.vue'
 
 const $q = useQuasar()
+const route = useRoute()
 const { session, activeCollection, loading: sessionLoading, error: sessionError, activateCollection, activating, refresh: refreshSession } = useSession()
 const { state, filters, requestQuery, update: updateRoute, reset } = useItemQuery()
 const mobile = computed(() => $q.screen.width < 1024)
@@ -390,10 +392,12 @@ onBeforeUnmount(() => { ++generation; ++contextGeneration; controller?.abort(); 
         </template>
         <template #body-cell-name="props">
           <q-td :props="props">
-            <a
-              :href="`/item/${props.row.id}/`"
+            <router-link
+              :to="itemRoute(props.row.id, route.fullPath)"
               class="pv-item-name"
-            >{{ props.row.name || 'Unnamed item' }}</a>
+            >
+              {{ props.row.name || 'Unnamed item' }}
+            </router-link>
           </q-td>
         </template>
         <template #body-cell-asset_tag="props">
@@ -444,7 +448,11 @@ onBeforeUnmount(() => { ++generation; ++contextGeneration; controller?.abort(); 
         >
           <ItemThumbnail :url="item.thumbnail_url" />
           <div class="pv-mobile-item-info">
-            <h2><a :href="`/item/${item.id}/`">{{ item.name || 'Unnamed item' }}</a></h2>
+            <h2>
+              <router-link :to="itemRoute(item.id, route.fullPath)">
+                {{ item.name || 'Unnamed item' }}
+              </router-link>
+            </h2>
             <p class="pv-muted">
               {{ [item.manufacturer?.name, item.model].filter(Boolean).join(' · ') || 'Manufacturer and model not set' }}
             </p>

@@ -110,3 +110,18 @@ export async function apiDownload(path: string, signal?: AbortSignal): Promise<B
   }
   try { return await response.blob() } catch (error) { transportError(error) }
 }
+
+// Documents live on the authorized legacy media route, outside the JSON API.
+export async function documentDownload(path: string, signal?: AbortSignal): Promise<Blob> {
+  if (!/^\/document\/[1-9]\d*\/$/.test(path)) throw new ApiError('This document URL is unavailable.', 0, 'validation')
+  let response: Response
+  try {
+    response = await fetch(path, { credentials: 'same-origin', redirect: 'error', signal })
+  } catch (error) { transportError(error) }
+  if (!response.ok) {
+    let payload: unknown = null
+    try { payload = await response.json() } catch { /* Legacy/proxy errors may be HTML. */ }
+    throw normalizeError(response.status, payload)
+  }
+  try { return await response.blob() } catch (error) { transportError(error) }
+}

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import NotFoundPage from '../pages/NotFoundPage.vue'
 import ItemsPage from '../pages/ItemsPage.vue'
+import ItemDetailPage from '../pages/ItemDetailPage.vue'
 
 export const router = createRouter({
   history: createWebHistory('/app/'),
@@ -9,6 +10,7 @@ export const router = createRouter({
     { path: '/', name: 'home', component: HomePage, meta: { title: 'Inventory' } },
     { path: '/items/', name: 'items', component: ItemsPage, meta: { title: 'Items' } },
     { path: '/items/:collectionId([1-9]\\d*)/', name: 'collection-items', component: ItemsPage, meta: { title: 'Items' } },
+    { path: '/item/:itemId([1-9]\\d*)/', name: 'item-detail', component: ItemDetailPage, meta: { title: 'Item' } },
     ...(import.meta.env.DEV ? [{ path: '/__preview/', component: () => import('../pages/PreviewPage.vue'), meta: { title: 'Component preview' } }] : []),
     { path: '/:pathMatch(.*)*', component: NotFoundPage, meta: { title: 'Page unavailable' } },
   ],

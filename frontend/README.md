@@ -1,8 +1,8 @@
 # PartVault frontend
 
-Phases 2–3 provide a Vue 3 / TypeScript / Quasar shell at `/app/` and item browser
-at `/app/items/` and `/app/items/{collection_id}/`. Collections, account, item
-detail and editor links open the working Django pages. User acceptance and
+Phases 2–4 provide a Vue 3 / TypeScript / Quasar shell at `/app/` and item browser
+at `/app/items/` and `/app/items/{collection_id}/`. Read-only item detail is at `/app/item/{item_id}/`. Collections, account and
+editor links open the working Django pages. User acceptance and
 legacy/API parity remain pending.
 
 ## Local setup
@@ -195,7 +195,7 @@ were added or run.
 - Browsing a collection does not activate it. Make active collection is an
   explicit owner-only CSRF-protected POST using the existing guarded helper.
   New item opens the legacy editor with the active collection selected; the page
-  explains that context. Detail/Edit remain `/item/{id}/` and `/items/{id}/edit/`.
+  explains that context. Phase 4 now opens Detail at `/app/item/{id}/` with browser return context; Edit remains `/items/{id}/edit/`.
 - Empty inventory, no matches, stable loading, retryable API/session errors and
   unavailable pages have distinct feedback. No automatic unsafe retry is added.
 
@@ -227,3 +227,63 @@ and outcomes in [the Phase 3 record](../ui-migrate-phase-3.md#completion-record)
 Implementation uses the official [QTable server-pagination guidance](https://quasar.dev/vue-components/table/#server-side-pagination-filter-and-sorting)
 and [QSelect async/filter guidance](https://quasar.dev/vue-components/select/).
 Local rendered review is partial evidence, separate from this checklist.
+
+## Phase 4 item detail
+
+`/app/item/{item_id}/` displays all metadata, dates, notes and tags; photos,
+links, authorized documents and parent/child/grandchild navigation. Native router
+links from the browser carry a validated `return=/app/items/...` URL (including
+filters/sort/page). Only same-origin item-browser paths are accepted; otherwise
+Back to items falls back to the item's collection, or all items if unavailable.
+Containment links preserve the same return context; normal new-tab behavior works.
+
+Initial children/photos/documents/links are the API's ten-row envelopes. Each
+resource's Load more follows its own `next` URL and preserves `page_size=10`.
+Grandchildren load only when a child's Show contents is opened, from that child's
+`children/?page_size=10`. There is no eager recursive tree fetch. Concurrent
+resource reads have independent loading/error/retry and cancellation guards;
+route/session refresh disposes old content and pending reads.
+
+Primary-first photo order is unchanged. Select a thumbnail to display that photo
+above; Open full image uses the authorized image route in a new tab. Missing
+photos/files have explicit fallbacks. Documents use authorized `/document/{id}/`:
+ordinary clicks fetch a Blob for download with inline HTTP/network errors, duplicate
+click prevention, cancellation and object-URL cleanup. Modified/new-tab clicks
+retain native delivery behavior. Saved external links allow HTTP/HTTPS with
+`noopener noreferrer`; invalid/unsafe URLs remain visible as text. Labels/notes
+are escaped text, never HTML.
+
+Only owners see legacy Edit/New controls; New uses the displayed active collection
+context. No metadata/attachment write API, stored-photo editor, dependencies or
+schema migrations were added. Authorized reads set the SPA document title; loading
+or failed reads clear prior item titles. Legacy `/item/{id}/` title/Open Graph
+metadata stays unchanged. Phase 14 must add permission-scoped Django shell metadata
+for primary item/QR routes before cutover; the temporary SPA shell remains generic
+before JavaScript bootstrap. No SSR infrastructure was introduced.
+
+### Phase 4 user-validation checklist
+
+Results remain pending; use disposable/test data and the phase completion record.
+
+- [ ] Compare every legacy field, optional relation, month-only release date,
+  notes/newlines, all other dates/timestamps, tags and missing values.
+- [ ] Anonymous public, owner private and another-user reads, unavailable item,
+  session expiry/logout/visibility change and direct refresh must not expose
+  private metadata, attachments or containment links. Test rapid item navigation.
+- [ ] Bookmark/refresh detail with return context, Back/Forward, new-tab links and
+  parent/child/grandchild navigation preserve browser query/page. Forged/external
+  return URLs must fall back locally.
+- [ ] More than ten children/photos/documents/links: independent continuation,
+  scoped absolute/relative URLs, retry/cancel and no eager whole-tree fetch.
+- [ ] Select each photo, open full images, absent/missing file fallback; download
+  documents normally/new-tab, missing file, proxy HTML errors, duplicate clicks,
+  navigation cancellation and object-URL cleanup. Validate saved safe/unsafe links.
+- [ ] Owner Edit/New remains legacy; non-owners have no mutation controls.
+- [ ] Desktop 1440px, 768px and 360px, keyboard/focus/thumbnail/disclosure links,
+  200% zoom, reduced motion, long names/tags/notes/URLs and attachment errors.
+- [ ] Operator build/static/start workflow, deep refresh and protected media through
+  nginx; no production result is claimed by local source/build/browser review.
+
+Component references: [Quasar image guidance](https://quasar.dev/vue-components/img/)
+and [disclosure accessibility guidance](https://quasar.dev/vue-components/expansion-item/).
+The implementation uses native image/button/link semantics within the Quasar shell.
