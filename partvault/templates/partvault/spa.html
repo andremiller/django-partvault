@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_config.siteTitle }}</title>
+    {% for href in style_urls %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+    {% for href in preload_urls %}<link rel="modulepreload" href="{{ href }}">{% endfor %}
+</head>
+<body>
+    {{ app_config|json_script:"pv-config" }}
+    <div id="app"></div>
+    <noscript>
+        <p>This interface needs JavaScript. Browse <a href="{% url 'items_all' %}">Items</a> or <a href="{% url 'collections' %}">Collections</a> using the existing pages.</p>
+    </noscript>
+    <script type="module" src="{{ script_url }}"></script>
+</body>
+</html>

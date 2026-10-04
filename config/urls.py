@@ -23,10 +23,13 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from partvault.views import protected_media
+from partvault.frontend import spa_shell
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("partvault.api.urls")),
+    path("app/", spa_shell, name="app"),
+    path("app/<path:spa_path>", spa_shell, name="app-deep-link"),
     path("", include("partvault.urls")),
 ]
 

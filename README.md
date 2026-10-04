@@ -57,6 +57,11 @@ Note, instructions below are to get started with a dev instance, instructions to
 - Open http://localhost:8000/
 - Open http://localhost:8000/admin for admin view
 
+### New interface
+
+The Vue/Quasar shell is available at `/app/` alongside the existing pages. Build its
+assets with Node 24 and npm before serving it; see [frontend setup and deployment](frontend/README.md).
+
 ## Back Matter
 
 ### Legal disclaimer

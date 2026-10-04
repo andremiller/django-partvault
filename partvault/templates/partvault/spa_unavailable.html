@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interface unavailable | {{ app_config.siteTitle }}</title>
+</head>
+<body>
+    <main>
+        <h1>The new interface is unavailable</h1>
+        <p>You can continue using the existing inventory pages.</p>
+        <nav aria-label="Inventory navigation">
+            <a href="{% url 'items_all' %}">Items</a>
+            <a href="{% url 'collections' %}">Collections</a>
+        </nav>
+    </main>
+</body>
+</html>

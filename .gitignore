@@ -20,3 +20,7 @@ db.sqlite3
 
 # Project
 media/
+frontend/node_modules/
+partvault/static/partvault/frontend/
+static/
+.artifacts/
