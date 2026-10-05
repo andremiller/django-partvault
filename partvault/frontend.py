@@ -81,7 +81,7 @@ def spa_shell(request, spa_path=""):
         return render(request, "partvault/spa_unavailable.html", context, status=503)
     # Keep known page routes aligned with the Vue router during coexistence.
     known_page = not spa_path or re.fullmatch(
-        r"(?:items(?:/[1-9][0-9]*)?|item/[1-9][0-9]*)/?", spa_path
+        r"(?:items(?:/(?:[1-9][0-9]*|new))?|item/[1-9][0-9]*(?:/edit)?)/?", spa_path
     )
     return render(
         request, "partvault/spa.html", context, status=200 if known_page else 404

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useQuasar, type QTableProps } from 'quasar'
 import { useRoute, type LocationQueryRaw } from 'vue-router'
-import { itemRoute } from '../api/itemNavigation'
+import { itemRoute, itemEditRoute, itemCreateRoute } from '../api/itemNavigation'
 import { mdiPlus, mdiRefresh, mdiFilterOutline } from '@quasar/extras/mdi-v7'
 import { ApiError, apiRequest } from '../api/client'
 import { useSession } from '../composables/useSession'
@@ -188,13 +188,13 @@ onBeforeUnmount(() => { ++generation; ++contextGeneration; controller?.abort(); 
         @click="refreshItems"
       />
       <q-btn
-        v-if="ready && session?.user && session.profile"
+        v-if="ready && session?.user"
         unelevated
         color="primary"
         no-caps
         :icon="mdiPlus"
         label="New item"
-        href="/items/new/"
+        :to="itemCreateRoute(route.fullPath, selectedCollection?.can_edit ? selectedCollection.id : activeCollection?.id)"
       />
     </div>
   </div>
@@ -223,10 +223,10 @@ onBeforeUnmount(() => { ++generation; ++contextGeneration; controller?.abort(); 
     @retry="activate"
   />
   <p
-    v-if="ready && session?.user && session.profile"
+    v-if="ready && session?.user"
     class="pv-muted pv-create-context"
   >
-    New items open in the legacy editor{{ activeCollection ? ` with ${activeCollection.name} selected` : '; choose an owned collection there' }}.
+    New items use an owned collection chosen in the editor; browsing does not change the active collection.
   </p>
   <section
     class="pv-browser-controls"
@@ -427,10 +427,12 @@ onBeforeUnmount(() => { ++generation; ++contextGeneration; controller?.abort(); 
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props">
-            <a
+            <router-link
               v-if="ready && props.row.can_edit"
-              :href="`/items/${props.row.id}/edit/`"
-            >Edit</a><span
+              :to="itemEditRoute(props.row.id, route.fullPath)"
+            >
+              Edit
+            </router-link><span
               v-else
               class="pv-muted"
             >Read only</span>
@@ -469,10 +471,12 @@ onBeforeUnmount(() => { ++generation; ++contextGeneration; controller?.abort(); 
             <div class="pv-mobile-item-links">
               <router-link :to="`/items/${item.collection.id}/`">
                 {{ item.collection.name }}
-              </router-link><a
+              </router-link><router-link
                 v-if="ready && item.can_edit"
-                :href="`/items/${item.id}/edit/`"
-              >Edit</a>
+                :to="itemEditRoute(item.id, route.fullPath)"
+              >
+                Edit
+              </router-link>
             </div>
           </div>
         </article>

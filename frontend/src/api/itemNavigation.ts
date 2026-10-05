@@ -24,3 +24,10 @@ export function protectedMediaPath(value: string | null, kind: 'image' | 'docume
     return url.origin === window.location.origin && pattern.test(url.pathname) && !url.search && !url.hash ? url.pathname : null
   } catch { return null }
 }
+
+export function itemEditRoute(id: number, browserPath: string) {
+  return { path: `/item/${id}/edit/`, query: { return: '/app' + browserPath } }
+}
+export function itemCreateRoute(browserPath: string, collectionId?: number) {
+  return { path: '/items/new/', query: { return: '/app' + browserPath, ...(collectionId ? { collection: String(collectionId) } : {}) } }
+}

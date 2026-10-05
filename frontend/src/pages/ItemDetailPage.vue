@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { mdiArrowLeft, mdiPencilOutline, mdiPlus, mdiRefresh } from '@quasar/extras/mdi-v7'
 import { ApiError, apiRequest } from '../api/client'
-import { itemBrowserReturn } from '../api/itemNavigation'
+import { itemBrowserReturn, itemEditRoute, itemCreateRoute } from '../api/itemNavigation'
 import { useSession } from '../composables/useSession'
 import type { ItemDetail } from '../types/api'
 import { appTitle } from '../router'
@@ -11,7 +11,7 @@ import ErrorState from '../components/common/ErrorState.vue'
 import LoadingState from '../components/common/LoadingState.vue'
 import ItemDetailContent from '../components/items/ItemDetailContent.vue'
 const route = useRoute()
-const { session, loading: sessionLoading, error: sessionError, activeCollection, refresh } = useSession()
+const { session, loading: sessionLoading, error: sessionError, refresh } = useSession()
 const item = ref<ItemDetail | null>(null)
 const loading = ref(true)
 const error = ref<ApiError | null>(null)
@@ -83,16 +83,16 @@ onBeforeUnmount(() => { disposed = true; ++generation; controller?.abort() })
         no-caps
         :icon="mdiPencilOutline"
         label="Edit"
-        :href="`/items/${item!.id}/edit/`"
+        :to="itemEditRoute(item!.id, browserPath)"
       />
       <q-btn
-        v-if="ownerActions && session?.profile"
+        v-if="ownerActions"
         unelevated
         color="primary"
         no-caps
         :icon="mdiPlus"
         label="New item"
-        href="/items/new/"
+        :to="itemCreateRoute(browserPath, item?.collection.id)"
       />
     </div>
   </div>
@@ -110,12 +110,6 @@ onBeforeUnmount(() => { disposed = true; ++generation; controller?.abort() })
     </p>
   </ErrorState>
   <template v-else-if="item">
-    <p
-      v-if="ownerActions && session?.profile"
-      class="pv-muted pv-create-context"
-    >
-      New items open in the legacy editor{{ activeCollection ? ` with ${activeCollection.name} selected` : '; choose an owned collection there' }}.
-    </p>
     <ItemDetailContent
       :key="version"
       :item="item"

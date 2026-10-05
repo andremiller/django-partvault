@@ -1,8 +1,8 @@
 # PartVault frontend
 
-Phases 2–4 provide a Vue 3 / TypeScript / Quasar shell at `/app/` and item browser
-at `/app/items/` and `/app/items/{collection_id}/`. Read-only item detail is at `/app/item/{item_id}/`. Collections, account and
-editor links open the working Django pages. User acceptance and
+Phases 2–6 provide a Vue 3 / TypeScript / Quasar shell at `/app/` and item browser
+at `/app/items/` and `/app/items/{collection_id}/`. Read-only item detail is at `/app/item/{item_id}/`. Metadata create/edit lives at `/app/items/new/` and `/app/item/{item_id}/edit/`. Collections, account and
+attachment-management links open the working Django pages. User acceptance and
 legacy/API parity remain pending.
 
 ## Local setup
@@ -194,8 +194,7 @@ were added or run.
   credentials or authoritative inventory is kept in that preference.
 - Browsing a collection does not activate it. Make active collection is an
   explicit owner-only CSRF-protected POST using the existing guarded helper.
-  New item opens the legacy editor with the active collection selected; the page
-  explains that context. Phase 4 now opens Detail at `/app/item/{id}/` with browser return context; Edit remains `/items/{id}/edit/`.
+  Phase 6 opens New/Edit in the SPA; an owned collection context is explicitly preselected in New, without activation. Detail/New/Edit retain browser return context.
 - Empty inventory, no matches, stable loading, retryable API/session errors and
   unavailable pages have distinct feedback. No automatic unsafe retry is added.
 
@@ -253,7 +252,7 @@ retain native delivery behavior. Saved external links allow HTTP/HTTPS with
 `noopener noreferrer`; invalid/unsafe URLs remain visible as text. Labels/notes
 are escaped text, never HTML.
 
-Only owners see legacy Edit/New controls; New uses the displayed active collection
+Phase 6 supersedes the legacy Edit/New destinations: owners use SPA metadata editing and explicit owned collection context. Previously, New used the displayed active collection
 context. No metadata/attachment write API, stored-photo editor, dependencies or
 schema migrations were added. Authorized reads set the SPA document title; loading
 or failed reads clear prior item titles. Legacy `/item/{id}/` title/Open Graph
@@ -278,7 +277,7 @@ Results remain pending; use disposable/test data and the phase completion record
 - [ ] Select each photo, open full images, absent/missing file fallback; download
   documents normally/new-tab, missing file, proxy HTML errors, duplicate clicks,
   navigation cancellation and object-URL cleanup. Validate saved safe/unsafe links.
-- [ ] Owner Edit/New remains legacy; non-owners have no mutation controls.
+- [ ] Owner Edit/New now opens the SPA metadata editor; non-owners have no mutation controls. Legacy attachment management remains available.
 - [ ] Desktop 1440px, 768px and 360px, keyboard/focus/thumbnail/disclosure links,
   200% zoom, reduced motion, long names/tags/notes/URLs and attachment errors.
 - [ ] Operator build/static/start workflow, deep refresh and protected media through
@@ -287,3 +286,66 @@ Results remain pending; use disposable/test data and the phase completion record
 Component references: [Quasar image guidance](https://quasar.dev/vue-components/img/)
 and [disclosure accessibility guidance](https://quasar.dev/vue-components/expansion-item/).
 The implementation uses native image/button/link semantics within the Quasar shell.
+
+## Phase 6 metadata editor
+
+Routes: /app/items/new/ and /app/item/{item_id}/edit/. Both are recognized by Django
+for direct refresh. Browser/detail New/Edit links use them; the legacy external
+routes remain operational. The editor uses all ItemForm metadata fields and the
+[Phase 5 write contract](../api-v1.md#phase-5-item-metadata-writes).
+
+- New can receive collection=<owned ID>; otherwise it preselects an owned active
+  collection, or asks for one. It never activates a collection. Profile is not
+  required for metadata writes. Editor collections use collections/?scope=owned.
+- Shared/personal lookup catalogs and same-collection parent items are searchable
+  in paginated QSelect controls. Parent choices include asset tags and omit the
+  current item. Cycles/descendant integrity remain server validation. A collection
+  change retains the old parent with an explicit mismatch error until cleared or
+  replaced; unrelated values remain. Lookup ownership stays the current account.
+- Contextual category/manufacturer/status/tag dialogs POST personal values and
+  select the result. Dialog closure returns focus to its selector. Status uses the
+  existing stored-color allowlist. These lookup creations save immediately and
+  survive metadata Cancel; uncertain results are explained before another request.
+- Text, optional relations, tags and all four dates map to explicit metadata
+  writes. Release month is a masked YYYY-MM text input: untouched months preserve
+  the original stored day; changed months submit day 01; clearing submits null.
+  Three other dates use native date inputs. Blank name retains backend auto-name.
+- Save has a pending guard, field errors plus focused summary, and status feedback.
+  Successful POST records the returned ID immediately and replaces the creation
+  route with the edit route; later saves use PATCH. Uncertain POST results require
+  review and an explicit duplicate-risk confirmation before retry; no automatic
+  replay. DELETE uses a named confirmation dialog and returns to the browser.
+- A changed/expired/unavailable session disables mutation controls without erasing
+  draft input. Original identity is required to resume. Log in can open a new tab,
+  then Refresh session reestablishes CSRF without submitting automatically.
+- Dirty metadata guards SPA navigation, same-window legacy links, native logout
+  forms and browser unload. Discard confirmation identifies retained lookup
+  creations. Native approved departures bypass a second unload prompt; modified/
+  new-tab links retain browser behavior. In-flight writes block app departures.
+- Existing-item Attachments links to /items/{id}/edit/ with the same dirty guard.
+  New items explain that metadata must save first. Link/document/photo editing
+  remains legacy until Phases 7/8; no stored-image editor was added.
+
+Checks: typecheck, lint, build, Django and scoped Ruff passed. Partial owner/
+anonymous Chrome review covers 1440/768/360px, initial values, selectors, status
+dialog name/focus return and an unsaved-name discard prompt. Mobile controls/
+actions measured 44px with no horizontal overflow. Evidence is ignored
+.artifacts/phase-6/. No write requests or automated tests were run.
+
+### Phase 6 user-validation checklist
+
+- [ ] Create, reload, edit and delete; blank-name/asset assignment; every ItemForm
+  field, null/empty values, tag replacement and release-day preservation.
+- [ ] Owned/active/absent collections, missing profile, parent changes/subtree moves,
+  invalid cycles, foreign/private targets and combined selection errors.
+- [ ] Lookup search/pagination, contextual creation/selection, all status colors,
+  server errors, duplicates and keyboard focus after success/cancel.
+- [ ] Dirty Save/Cancel/back/navigation/unload, native attachment/account/logout
+  links, modified clicks and busy-state departures.
+- [ ] Session expiry/account switch/CSRF refresh keep input and prevent stale-account
+  writes. Network/proxy/validation failures retain values; uncertain writes do not
+  replay automatically.
+- [ ] Double submissions, successful creation route replacement, uncertain creation
+  reconciliation/retry, deletion outcomes and sensible browser return filters.
+- [ ] Desktop/tablet/mobile, full keyboard/dialog containment, long labels, many
+  tags, touch/date/month input, 200% zoom, reduced motion and error-summary focus.

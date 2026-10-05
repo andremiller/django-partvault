@@ -140,10 +140,18 @@ class CollectionListView(ReadMixin, ListAPIView):
 
     def get_queryset(self):
         params = self.request.query_params
-        validate_query(params, PAGE_PARAMS | {"search"})
+        validate_query(params, PAGE_PARAMS | {"search", "scope"})
         queryset = visible_collections(self.request.user).select_related(
             "owner__profile"
         )
+        if "scope" in params:
+            if params["scope"] != "owned":
+                raise ValidationError({"scope": ["Use owned or omit scope."]})
+            queryset = (
+                queryset.filter(owner=request_user)
+                if (request_user := self.request.user).is_authenticated
+                else queryset.none()
+            )
         if search := params.get("search", "").strip():
             queryset = queryset.filter(name__icontains=search)
         return queryset.order_by("name", "id")
