@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Count
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -10,7 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from partvault.access import visible_collections, visible_items
-from partvault.models import Collection, Document, Link, Photo, Profile
+from partvault.item_services import delete_item
+from partvault.models import Collection, Document, Item, Link, Photo, Profile
 
 from .pagination import validate_query
 from .queries import (
@@ -28,6 +30,8 @@ from .serializers import (
     DocumentSerializer,
     ItemDetailSerializer,
     ItemListSerializer,
+    ItemWriteSerializer,
+    LookupWriteSerializer,
     LabelSerializer,
     LinkSerializer,
     LookupSerializer,
@@ -50,6 +54,16 @@ class PrivateResponseMixin:
 class ReadMixin(PrivateResponseMixin):
     permission_classes = (AllowAny,)
     http_method_names = ("get", "head", "options")
+
+
+class ReadWriteMixin(PrivateResponseMixin):
+    def get_permissions(self):
+        permission = (
+            AllowAny
+            if self.request.method in ("GET", "HEAD", "OPTIONS")
+            else IsAuthenticated
+        )
+        return [permission()]
 
 
 class SessionView(ReadMixin, APIView):
@@ -147,12 +161,34 @@ class CollectionDetailView(ReadMixin, RetrieveAPIView):
         )
 
 
-class ItemListView(ReadMixin, ListAPIView):
+class ItemListView(ReadWriteMixin, ListAPIView):
     serializer_class = ItemListSerializer
+    http_method_names = ("get", "head", "post", "options")
+
+    def get_serializer_class(self):
+        return (
+            ItemWriteSerializer if self.request.method == "POST" else ItemListSerializer
+        )
 
     def get_queryset(self):
         return ordered_items(
             item_reads(self.request.user), self.request.query_params, self.request.user
+        )
+
+    def post(self, request):
+        validate_query(request.query_params, set())
+        serializer = ItemWriteSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        item = serializer.save()
+        item = item_reads(request.user).get(pk=item.pk)
+        return Response(
+            item_detail_data(self, item),
+            status=201,
+            headers={
+                "Location": reverse("api-v1:item-detail", args=[item.pk]),
+            },
         )
 
 
@@ -176,35 +212,63 @@ def nested_resource(user, item_id, resource):
     raise NotFound()
 
 
-class ItemDetailView(ReadMixin, RetrieveAPIView):
+class ItemDetailView(ReadWriteMixin, RetrieveAPIView):
     serializer_class = ItemDetailSerializer
+    http_method_names = ("get", "head", "patch", "delete", "options")
 
     def get_queryset(self):
         validate_query(self.request.query_params, set())
-        return item_reads(self.request.user)
+        queryset = item_reads(self.request.user)
+        if self.request.method not in ("GET", "HEAD", "OPTIONS"):
+            queryset = queryset.filter(collection__owner=self.request.user)
+        return queryset
 
     def retrieve(self, request, *args, **kwargs):
         item = self.get_object()
-        item.visible_parent = (
-            item_reads(request.user).filter(pk=item.parent_item_id).first()
-            if item.parent_item_id
-            else None
+        return Response(item_detail_data(self, item))
+
+    def patch(self, request, *args, **kwargs):
+        serializer = ItemWriteSerializer(
+            self.get_object(),
+            data=request.data,
+            partial=True,
+            context=self.get_serializer_context(),
         )
-        data = self.get_serializer(item).data
-        # First ten rows per resource, with canonical paginated continuation URLs.
-        for resource in ("children", "photos", "documents", "links"):
-            queryset, serializer = nested_resource(request.user, item.pk, resource)
-            count = queryset.count()
-            url = reverse(f"api-v1:item-{resource}", args=[item.pk])
-            data[resource] = {
-                "count": count,
-                "next": f"{url}?page=2&page_size=10" if count > 10 else None,
-                "previous": None,
-                "results": serializer(
-                    queryset[:10], many=True, context=self.get_serializer_context()
-                ).data,
-            }
-        return Response(data)
+        serializer.is_valid(raise_exception=True)
+        item = serializer.save()
+        item = item_reads(request.user).get(pk=item.pk)
+        return Response(item_detail_data(self, item))
+
+    def delete(self, request, *args, **kwargs):
+        item = self.get_object()
+        try:
+            delete_item(request.user, item)
+        except Item.DoesNotExist as exc:
+            raise NotFound() from exc
+        return Response(status=204)
+
+
+def item_detail_data(view, item):
+    request = view.request
+    item.visible_parent = (
+        item_reads(request.user).filter(pk=item.parent_item_id).first()
+        if item.parent_item_id
+        else None
+    )
+    data = ItemDetailSerializer(item, context=view.get_serializer_context()).data
+    for resource in ("children", "photos", "documents", "links"):
+        queryset, serializer = nested_resource(request.user, item.pk, resource)
+        count = queryset.count()
+        url = reverse(f"api-v1:item-{resource}", args=[item.pk])
+        data[resource] = {
+            "count": count,
+            "next": f"{url}?page=2&page_size=10" if count > 10 else None,
+            "previous": None,
+            "results": serializer(
+                queryset[:10], many=True, context=view.get_serializer_context()
+            ).data,
+        }
+    return data
 
 
 class ItemResourceView(ReadMixin, GenericAPIView):
@@ -229,11 +293,19 @@ class ItemResourceView(ReadMixin, GenericAPIView):
         )
 
 
-class LookupListView(ReadMixin, ListAPIView):
+class LookupListView(ReadWriteMixin, ListAPIView):
     lookup = None
+    http_method_names = ("get", "head", "post", "options")
 
     def get_serializer_class(self):
         return StatusLookupSerializer if self.lookup == "statuses" else LookupSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        if self.request.method == "POST" and not args:
+            model, _ = LOOKUPS[self.lookup]
+            kwargs.setdefault("context", self.get_serializer_context())
+            return LookupWriteSerializer(model=model, **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
     def get_queryset(self):
         params = self.request.query_params
@@ -243,6 +315,64 @@ class LookupListView(ReadMixin, ListAPIView):
         if search := params.get("search", "").strip():
             queryset = queryset.filter(name__icontains=search)
         return queryset.order_by("name", "id")
+
+    @transaction.atomic
+    def post(self, request):
+        validate_query(request.query_params, set())
+        model, _ = LOOKUPS[self.lookup]
+        serializer = LookupWriteSerializer(
+            data=request.data, model=model, context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response(
+            self.get_serializer(obj).data,
+            status=201,
+            headers={
+                "Location": reverse(f"api-v1:{self.lookup}-detail", args=[obj.pk]),
+            },
+        )
+
+
+class LookupDetailView(ReadWriteMixin, GenericAPIView):
+    lookup = None
+    http_method_names = ("get", "head", "patch", "delete", "options")
+
+    def get_serializer_class(self):
+        return StatusLookupSerializer if self.lookup == "statuses" else LookupSerializer
+
+    def get(self, request, pk):
+        validate_query(request.query_params, set())
+        model, _ = LOOKUPS[self.lookup]
+        obj = get_object_or_404(lookup_catalog(model, request.user), pk=pk)
+        return Response(self.get_serializer(obj).data)
+
+    def owned_object(self, pk):
+        validate_query(self.request.query_params, set())
+        model, _ = LOOKUPS[self.lookup]
+        return get_object_or_404(
+            model.objects.select_for_update(), pk=pk, user=self.request.user
+        )
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        obj = self.owned_object(pk)
+        serializer = LookupWriteSerializer(
+            obj,
+            data=request.data,
+            partial=True,
+            model=type(obj),
+            context=self.get_serializer_context(),
+        )
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response(self.get_serializer(obj).data)
+
+    @transaction.atomic
+    def delete(self, request, pk):
+        obj = self.owned_object(pk)
+        obj.delete()  # Existing SET_NULL/M2M cleanup semantics are retained.
+        return Response(status=204)
 
 
 class FilterFacetView(ReadMixin, ListAPIView):

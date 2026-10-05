@@ -1,7 +1,26 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q
 from django.urls import reverse
+from rest_framework.exceptions import NotFound
 from rest_framework import serializers
 
-from partvault.models import Collection, Document, Item, Link, Photo
+from partvault.item_services import (
+    ITEM_WRITE_FIELDS,
+    TAXONOMIES,
+    save_item,
+    validate_item_write,
+)
+from partvault.models import (
+    Category,
+    Collection,
+    Document,
+    Item,
+    Link,
+    Manufacturer,
+    Photo,
+    Status,
+    Tag,
+)
 
 
 class LabelSerializer(serializers.Serializer):
@@ -158,3 +177,130 @@ class LinkSerializer(serializers.ModelSerializer):
         model = Link
         fields = ("id", "link_type", "url", "created_at")
         read_only_fields = fields
+
+
+class StrictWriteSerializer(serializers.Serializer):
+    """Reject server-controlled and unknown fields instead of silently ignoring."""
+
+    def to_internal_value(self, data):
+        if hasattr(data, "keys"):
+            unknown = set(data) - set(self.fields)
+            if unknown:
+                raise serializers.ValidationError(
+                    {field: ["This field cannot be written."] for field in unknown}
+                )
+        return super().to_internal_value(data)
+
+
+def write_error(exc):
+    detail = (
+        exc.message_dict
+        if hasattr(exc, "message_dict")
+        else {"non_field_errors": exc.messages}
+    )
+    return serializers.ValidationError(
+        {
+            ("non_field_errors" if key == "__all__" else key): value
+            for key, value in detail.items()
+        }
+    )
+
+
+class WriteRelatedField(serializers.PrimaryKeyRelatedField):
+    def __init__(self, **kwargs):
+        kwargs["pk_field"] = serializers.IntegerField(
+            min_value=1, max_value=9223372036854775807
+        )
+        super().__init__(**kwargs)
+
+
+class ItemWriteSerializer(StrictWriteSerializer, serializers.ModelSerializer):
+    collection = WriteRelatedField(queryset=Collection.objects.none())
+    category = WriteRelatedField(
+        queryset=Category.objects.none(), required=False, allow_null=True
+    )
+    manufacturer = WriteRelatedField(
+        queryset=Manufacturer.objects.none(), required=False, allow_null=True
+    )
+    status = WriteRelatedField(
+        queryset=Status.objects.none(), required=False, allow_null=True
+    )
+    parent_item = WriteRelatedField(
+        queryset=Item.objects.none(), required=False, allow_null=True
+    )
+    tags = WriteRelatedField(queryset=Tag.objects.none(), many=True, required=False)
+
+    class Meta:
+        model = Item
+        fields = ITEM_WRITE_FIELDS
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        user = self.context["request"].user
+        if not user.is_authenticated:
+            return
+        self.fields["collection"].queryset = Collection.objects.filter(owner=user)
+        self.fields["parent_item"].queryset = Item.objects.filter(
+            collection__owner=user
+        )
+        for field, model in TAXONOMIES.items():
+            self.fields[field].queryset = model.objects.filter(
+                Q(user=user) | Q(user__isnull=True)
+            )
+        self.fields["tags"].child_relation.queryset = Tag.objects.filter(
+            Q(user=user) | Q(user__isnull=True)
+        )
+        for field in ("collection", "parent_item", *TAXONOMIES):
+            self.fields[field].error_messages["does_not_exist"] = (
+                "Select an available choice."
+            )
+        self.fields["tags"].child_relation.error_messages["does_not_exist"] = (
+            "Select an available choice."
+        )
+
+    def validate(self, attrs):
+        try:
+            validate_item_write(self.context["request"].user, self.instance, attrs)
+        except DjangoValidationError as exc:
+            raise write_error(exc) from exc
+        except Item.DoesNotExist as exc:
+            raise NotFound() from exc
+        return attrs
+
+    def create(self, validated_data):
+        return self._save(None, validated_data)
+
+    def update(self, instance, validated_data):
+        return self._save(instance, validated_data)
+
+    def _save(self, instance, data):
+        try:
+            return save_item(self.context["request"].user, instance, data)
+        except DjangoValidationError as exc:
+            raise write_error(exc) from exc
+        except Item.DoesNotExist as exc:
+            raise NotFound() from exc
+
+
+class LookupWriteSerializer(StrictWriteSerializer):
+    def __init__(self, *args, model, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = model
+        self.fields["name"] = serializers.CharField(
+            max_length=model._meta.get_field("name").max_length
+        )
+        if model is Status:
+            self.fields["color"] = serializers.ChoiceField(
+                choices=Status.Color.choices, required=False, default=Status.Color.INFO
+            )
+
+    def create(self, validated_data):
+        return self.model.objects.create(
+            user=self.context["request"].user, **validated_data
+        )
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance

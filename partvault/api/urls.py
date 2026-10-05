@@ -49,5 +49,13 @@ for lookup in LOOKUPS:
         )
     )
 
+    urlpatterns.append(
+        path(
+            f"{lookup}/<int:pk>/",
+            views.LookupDetailView.as_view(lookup=lookup),
+            name=f"{lookup}-detail",
+        )
+    )
+
 # Keep unknown API GETs JSON, including during later SPA route coexistence.
 urlpatterns.append(re_path(r"^.*$", views.MissingEndpointView.as_view()))

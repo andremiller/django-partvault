@@ -9,7 +9,8 @@ from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.paginator import Paginator
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import transaction
 from django.db.models import Count, Max, Prefetch, Q
 from django.forms import formset_factory, inlineformset_factory, modelformset_factory
 from django.http import FileResponse, Http404, HttpResponse
@@ -19,6 +20,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 
 from .access import visible_collections, visible_items
+from .item_services import delete_item
 
 from .models import (
     AssetTagSequence,
@@ -642,25 +644,39 @@ def _save_link_formset(formset, user):
         instance.delete()
 
 
-def _update_descendant_collections(item, collection):
-    seen_ids = {item.id}
-    parent_ids = [item.id]
-
-    while parent_ids:
-        child_ids = list(
-            Item.objects.filter(parent_item_id__in=parent_ids).values_list(
-                "id", flat=True
-            )
-        )
-        next_parent_ids = [
-            child_id for child_id in child_ids if child_id not in seen_ids
-        ]
-        if not next_parent_ids:
-            break
-
-        Item.objects.filter(id__in=next_parent_ids).update(collection=collection)
-        seen_ids.update(next_parent_ids)
-        parent_ids = next_parent_ids
+def _save_item_form(form, formsets, related_formsets, user):
+    try:
+        with transaction.atomic():
+            item = form.save()
+            for formset in related_formsets.values():
+                formset.instance = item
+            related_formsets["photo_formset"].save()
+            _save_document_formset(related_formsets["document_formset"], user)
+            _save_link_formset(related_formsets["link_formset"], user)
+            created = {
+                field: _save_user_inline_objects(
+                    formsets[f"{field}_formset"], model, user
+                )
+                for field, model in (
+                    ("category", Category),
+                    ("manufacturer", Manufacturer),
+                    ("status", Status),
+                    ("tag", Tag),
+                )
+            }
+            for field in ("category", "manufacturer", "status"):
+                if not getattr(item, field) and created[field]:
+                    setattr(item, field, created[field][0])
+            if created["tag"]:
+                item.tags.add(*created["tag"])
+            item.save(update_fields=["category", "manufacturer", "status"])
+            return item
+    except ValidationError as exc:
+        form.add_error(None, exc)
+        return None
+    except Item.DoesNotExist:
+        form.add_error(None, "This item is no longer available.")
+        return None
 
 
 @login_required
@@ -681,39 +697,12 @@ def item_create(request):
             collection = form.cleaned_data["collection"]
             if collection.owner != request.user:
                 form.add_error("collection", "Select a collection you own.")
-            else:
-                item = form.save(commit=False)
-                item.save()
-                form.save_m2m()
-                related_formsets["photo_formset"].instance = item
-                related_formsets["photo_formset"].save()
-                related_formsets["document_formset"].instance = item
-                _save_document_formset(
-                    related_formsets["document_formset"], request.user
+            elif (
+                saved_item := _save_item_form(
+                    form, formsets, related_formsets, request.user
                 )
-                related_formsets["link_formset"].instance = item
-                _save_link_formset(related_formsets["link_formset"], request.user)
-                new_categories = _save_user_inline_objects(
-                    formsets["category_formset"], Category, collection.owner
-                )
-                new_manufacturers = _save_user_inline_objects(
-                    formsets["manufacturer_formset"], Manufacturer, collection.owner
-                )
-                new_statuses = _save_user_inline_objects(
-                    formsets["status_formset"], Status, collection.owner
-                )
-                new_tags = _save_user_inline_objects(
-                    formsets["tag_formset"], Tag, collection.owner
-                )
-                if not item.category and new_categories:
-                    item.category = new_categories[0]
-                if not item.manufacturer and new_manufacturers:
-                    item.manufacturer = new_manufacturers[0]
-                if not item.status and new_statuses:
-                    item.status = new_statuses[0]
-                if new_tags:
-                    item.tags.add(*new_tags)
-                item.save(update_fields=["category", "manufacturer", "status"])
+            ) is not None:
+                item = saved_item
                 messages.success(request, "Item created.")
                 return redirect("item", item_id=item.id)
     else:
@@ -736,7 +725,6 @@ def item_create(request):
 @login_required
 def item_edit(request, item_id):
     item = get_object_or_404(Item, pk=item_id, collection__owner=request.user)
-    old_collection_id = item.collection_id
     formsets = _build_item_formsets(
         post_data=request.POST if request.method == "POST" else None
     )
@@ -754,39 +742,12 @@ def item_edit(request, item_id):
             collection = form.cleaned_data["collection"]
             if collection.owner != request.user:
                 form.add_error("collection", "Select a collection you own.")
-            else:
-                item = form.save(commit=False)
-                collection_changed = old_collection_id != collection.id
-                item.save()
-                if collection_changed:
-                    _update_descendant_collections(item, collection)
-                form.save_m2m()
-                related_formsets["photo_formset"].save()
-                _save_document_formset(
-                    related_formsets["document_formset"], request.user
+            elif (
+                saved_item := _save_item_form(
+                    form, formsets, related_formsets, request.user
                 )
-                _save_link_formset(related_formsets["link_formset"], request.user)
-                new_categories = _save_user_inline_objects(
-                    formsets["category_formset"], Category, collection.owner
-                )
-                new_manufacturers = _save_user_inline_objects(
-                    formsets["manufacturer_formset"], Manufacturer, collection.owner
-                )
-                new_statuses = _save_user_inline_objects(
-                    formsets["status_formset"], Status, collection.owner
-                )
-                new_tags = _save_user_inline_objects(
-                    formsets["tag_formset"], Tag, collection.owner
-                )
-                if not item.category and new_categories:
-                    item.category = new_categories[0]
-                if not item.manufacturer and new_manufacturers:
-                    item.manufacturer = new_manufacturers[0]
-                if not item.status and new_statuses:
-                    item.status = new_statuses[0]
-                if new_tags:
-                    item.tags.add(*new_tags)
-                item.save(update_fields=["category", "manufacturer", "status"])
+            ) is not None:
+                item = saved_item
                 messages.success(request, "Item updated.")
                 return redirect("item", item_id=item.id)
     else:
@@ -806,7 +767,7 @@ def item_edit(request, item_id):
 def item_delete(request, item_id):
     item = get_object_or_404(Item, pk=item_id, collection__owner=request.user)
     collection_id = item.collection_id
-    item.delete()
+    delete_item(request.user, item)
     messages.success(request, "Item deleted.")
     return redirect("items", collection_id=collection_id)
 

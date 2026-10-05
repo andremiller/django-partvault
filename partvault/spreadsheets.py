@@ -16,6 +16,8 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.exceptions import InvalidFileException
 
+from .item_services import lock_item_owner, validate_item_write
+
 from .models import (
     Category,
     Collection,
@@ -523,6 +525,8 @@ def process_workbook(collection, user, upload, *, commit=False):
     """Validate each upload afresh; optionally apply its plan atomically."""
     rows = read_workbook(upload)
     with transaction.atomic() if commit else nullcontext():
+        if commit:
+            lock_item_owner(user)
         collections = Collection.objects.filter(pk=collection.pk, owner=user)
         if commit:
             collections = collections.select_for_update()
@@ -588,3 +592,14 @@ def _apply_plan(collection, user, plan):
             for change in row["changes"]:
                 if change["field"] == "parent_asset_tag":
                     change["after"] = parent.asset_tag if parent else ""
+
+    # Validate the completed plan's graph after forward references have settled.
+    # Do not reject a valid plan's interim graph.
+    for row in plan["rows"]:
+        if row["action"] != "unchanged":
+            try:
+                validate_item_write(user, all_items[row["key"]], {})
+            except ValidationError as exc:
+                raise SpreadsheetError(
+                    f"Row {row['number']}: {'; '.join(exc.messages)} No changes were saved."
+                ) from exc

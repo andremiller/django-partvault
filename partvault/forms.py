@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Q
 
+from .item_services import ITEM_WRITE_FIELDS, save_item, validate_item_write
+
 from .models import (
     AssetTagSequence,
     Category,
@@ -142,6 +144,7 @@ class ItemForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, collection=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
         if user:
             self.fields["collection"].queryset = Collection.objects.filter(owner=user)
         else:
@@ -150,7 +153,7 @@ class ItemForm(forms.ModelForm):
         selected_collection = collection
         if self.is_bound:
             collection_id = self.data.get("collection")
-            if collection_id:
+            if collection_id and str(collection_id).isdecimal():
                 collection_filter = {"pk": collection_id}
                 if user:
                     collection_filter["owner"] = user
@@ -206,36 +209,28 @@ class ItemForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        collection = cleaned_data.get("collection")
-        owner_id = collection.owner_id if collection else None
-        collection_fields = ["parent_item"]
-        user_fields = ["category", "manufacturer", "status"]
-        for field_name in collection_fields:
-            value = cleaned_data.get(field_name)
-            if value and collection and value.collection_id != collection.id:
-                self.add_error(
-                    field_name,
-                    "Selection must belong to the chosen collection.",
-                )
-        for field_name in user_fields:
-            value = cleaned_data.get(field_name)
-            if value and owner_id and value.user_id not in (owner_id, None):
-                self.add_error(
-                    field_name,
-                    "Selection must belong to the collection owner.",
-                )
-
-        tags = cleaned_data.get("tags")
-        if tags and owner_id:
-            for tag in tags:
-                if tag.user_id not in (owner_id, None):
-                    self.add_error(
-                        "tags",
-                        "All tags must belong to the collection owner.",
-                    )
-                    break
-
+        if not self.errors:
+            try:
+                validate_item_write(self.user, self.instance, cleaned_data)
+            except ValidationError as exc:
+                self.add_error(None, exc)
+            except Item.DoesNotExist:
+                self.add_error(None, "This item is no longer available.")
         return cleaned_data
+
+    def save(self, commit=True):
+        if not commit:
+            return super().save(commit=False)
+        if self.errors:
+            raise ValueError(
+                "The item could not be saved because the data did not validate."
+            )
+        self.instance = save_item(
+            self.user,
+            self.instance,
+            {field: self.cleaned_data[field] for field in ITEM_WRITE_FIELDS},
+        )
+        return self.instance
 
 
 class UserProfileForm(forms.ModelForm):
@@ -338,9 +333,9 @@ class LinkForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user:
             user_filter = Q(user=user) | Q(user__isnull=True)
-            self.fields["link_type"].queryset = self.fields["link_type"].queryset.filter(
-                user_filter
-            )
+            self.fields["link_type"].queryset = self.fields[
+                "link_type"
+            ].queryset.filter(user_filter)
             user_id = user.id
 
             def label_with_custom_marker(obj):
